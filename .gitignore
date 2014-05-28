@@ -1,19 +1,11 @@
 *.class
 *.log
+*.cache
 
 # sbt specific
-.cache/
-.history/
-.lib/
-dist/*
-target/*
-project/target/*
-project/boot/
-project/plugins/project/
-
-# Scala-IDE specific
-.scala_dependencies
-.worksheet
+dist/
+target/
+project/
 
 # Intellij
-.idea/*
+.idea/
