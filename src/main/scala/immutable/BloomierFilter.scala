@@ -3,6 +3,22 @@ package immutable
 /**
  * Created by smcho on 6/2/14.
  */
+
+object BloomierFilter {
+
+  def checkZeroElement(element: Seq[Byte]) : Boolean = {
+    element.forall(_ == 0)
+  }
+
+  //def checkAllZeroElementsInTable(neighbors: Seq[Int], table: Seq[Seq[Byte]]) : Boolean = {
+  def checkAllZeroElementsInTable(neighbors: Seq[Int], table: Array[Array[Byte]]) : Boolean = {
+    for (n <- neighbors) {
+      if (!checkZeroElement(table(n))) return false
+    }
+    true
+  }
+}
+
 class BloomierFilter(keysDict:Map[String, Any], m:Int, k:Int, q:Int, maxTry:Int = 5, initialHashSeed:Int = 0) {
   val hasher = core.BloomierHasher(m = m, k = k, q = q, hashSeed = initialHashSeed)
   val oamf = new core.OrderAndMatchFinder(keysDict = keysDict, m = m, k = k, q = q, maxTry = maxTry, initialHashSeed = initialHashSeed)
@@ -18,17 +34,19 @@ class BloomierFilter(keysDict:Map[String, Any], m:Int, k:Int, q:Int, maxTry:Int 
     val mask = hasher.getM(key).toArray.map(_.toByte)
     var valueToRestore = mask
 
-    var j:Int = 0
-    for (n <- neighbors) {
-      valueToRestore = utils.conversion.Utils.byteArrayXor(valueToRestore, table(n))
+    if (BloomierFilter.checkAllZeroElementsInTable(neighbors, table)) {
+      None
+    } else {
+      for (n <- neighbors) {
+        valueToRestore = utils.conversion.Utils.byteArrayXor(valueToRestore, table(n))
+      }
+      core.Decode.decode(key, valueToRestore, byteSize)
     }
-    core.Decode.decode(key, valueToRestore, byteSize)
   }
 
   def create(keysDict:Map[String, Any], orderAndMatch:core.OrderAndMatch) = {
 
-    var i:Int = 0
-    for (key <- orderAndMatch.piList) {
+    for ((key, i) <- orderAndMatch.piList.zipWithIndex) {
       val value : Int = keysDict(key).asInstanceOf[Int]
       val neighbors = hasher.getNeighborhood(key, hashSeed)
       val mask = hasher.getM(key).toArray.map(_.toByte)
@@ -38,15 +56,12 @@ class BloomierFilter(keysDict:Map[String, Any], m:Int, k:Int, q:Int, maxTry:Int 
       val encodedValue = core.Encode.encode(key, value, byteSize)
       var valueToStore = utils.conversion.Utils.byteArrayXor(mask, encodedValue)
 
-      var j:Int = 0
-      for (n <- neighbors) {
+      for ((n, j) <- neighbors.zipWithIndex) {
         if (j != l) {
           valueToStore = utils.conversion.Utils.byteArrayXor(valueToStore, table(n))
         }
       }
       table(L) = valueToStore
-
-      i += 1
     }
   }
 }

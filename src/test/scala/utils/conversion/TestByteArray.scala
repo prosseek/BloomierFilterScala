@@ -1,6 +1,8 @@
 package utils.conversion
 
 import org.scalatest._
+import scala.collection.BitSet
+
 /**
  * Created by smcho on 5/31/14.
  */
@@ -25,6 +27,18 @@ class TestByteArray extends FunSuite {
     assert(value == ByteArray.byteArrayToFloat(ByteArray.floatToByteArray(value)))
     value = 0.0F
     assert(value == ByteArray.byteArrayToFloat(ByteArray.floatToByteArray(value)))
+  }
+  test ("byte to byte array and back test ") {
+    var value : Byte = 0
+    assert(value == ByteArray.byteArrayToByte(ByteArray.dataToByteArray(value)))
+    value = Byte.MaxValue
+    assert(value == ByteArray.byteArrayToByte(ByteArray.dataToByteArray(value)))
+    value = Byte.MinValue
+    assert(value == ByteArray.byteArrayToByte(ByteArray.dataToByteArray(value)))
+    value = 123
+    assert(value == ByteArray.byteArrayToByte(ByteArray.dataToByteArray(value)))
+    value = -123
+    assert(value == ByteArray.byteArrayToByte(ByteArray.dataToByteArray(value)))
   }
   test ("int to byte array and back test ") {
     var value = 0
@@ -52,5 +66,16 @@ class TestByteArray extends FunSuite {
     // even though the buffer size is bigger, the return value should be OK
     assert(value == ByteArray.byteArrayToString(ByteArray.stringToByteArray(value, 100)))
     assert("He" == ByteArray.byteArrayToString(ByteArray.stringToByteArray(value, 2)))
+  }
+  test("bitSet to bytearray test") {
+    var x = BitSet(0,1,2,3,8,10,104)
+    var y = ByteArray.bitSetToByteArray(x)
+    assert(y.mkString(":") == "15:5:0:0:0:0:0:0:0:0:0:0:0:1")
+    assert(ByteArray.byteArrayToBitSet(y) == x)
+
+    x = BitSet(0,1,2,3,4,5,6,7,8)
+    y = ByteArray.bitSetToByteArray(x)
+    assert(y.mkString(":") == "-1:1")
+    assert(ByteArray.byteArrayToBitSet(y) == x)
   }
 }
