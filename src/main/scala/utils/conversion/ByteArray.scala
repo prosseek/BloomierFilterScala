@@ -14,7 +14,7 @@ object ByteArray {
     from Data : T -> ByteArray
    */
   def intToByteArray(x: Int) = dataToByteArray(x)
-  def byteToByteArray(x: Int) = dataToByteArray(x)
+  def byteToByteArray(x: Byte) = dataToByteArray(x)
   def dataToByteArray(x: Int) = {
     ByteBuffer.allocate(4).putInt(x).array()
   }
