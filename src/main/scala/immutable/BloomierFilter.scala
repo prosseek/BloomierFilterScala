@@ -34,6 +34,7 @@ class BloomierFilter(keysDict:Map[String, Any], m:Int, k:Int, q:Int, maxTry:Int 
     val mask = hasher.getM(key).toArray.map(_.toByte)
     var valueToRestore = mask
 
+    // If all of the row data in the table is zero, it means it's garbage data
     if (BloomierFilter.checkAllZeroElementsInTable(neighbors, table)) {
       None
     } else {
