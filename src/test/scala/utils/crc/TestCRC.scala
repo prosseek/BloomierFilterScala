@@ -19,7 +19,7 @@ class TestCRC extends FunSuite {
     var g = BitSet(3,1,0)
     decode = CRC.encode(BitSet(2,3,5,6,7,10,12,13), 3, Option(g))
     assert(CRC.decode(decode, 3, Option(g)) == true)
-    decode = BitSet(0,2,5,6,8,9,10,13,15,16)
+    decode = BitSet(0,2,5,6,8,9,10,13,15,16) // Just one bit (at location 0) added
     assert(CRC.decode(decode, 3, Option(g)) == false)
   }
 }

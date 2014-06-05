@@ -1,49 +1,35 @@
 package utils.conversion
 
 import org.scalatest._
+
 /**
- * Created by smcho on 6/2/14.
+ * Created by smcho on 6/4/14.
  */
 class TestLocation extends FunSuite {
-  test("dms -> dd test1 ") {
-    assert((Location.dms2dd(38, 53, 23.55) - 38.889875) < 0.000001)
-    assert((Location.dms2dd(38, 53, "23.55") - 338.889875) < 0.000001)
-    assert((Location.dms2dd(38, 53, 23, 55) - 38.889875) < 0.000001)
+  test ("Latitude test") {
+    var l = new Latitude(38, 53, 23, 55)
+    assert(l.toByteArray().mkString(":") == "38:-22:-21:6")
+    assert(l.toBitSet().mkString(":") == "1:2:5:9:11:13:14:15:16:17:19:21:22:23:25:26")
+    l = new Latitude(-38, 53, 23, 55)
+    assert(l.toByteArray().mkString(":") == "-38:-22:-21:6")
   }
-  test("dms -> dd test2 ") {
-    assert((Location.dms2dd(1, 1, 1, 98) - 1.017217) < 0.000001)
+  test ("Altitude test") {
+    var l = new Altitude(38, 53, 23, 55)
+    assert(l.toByteArray().mkString(":") == "38:-11:117:3")
+    assert(l.toBitSet().mkString(":") == "1:2:5:8:10:12:13:14:15:16:18:20:21:22:24:25")
+    l = new Altitude(-38, 53, 23, 55)
+    assert(l.toByteArray().mkString(":") == "-38:-11:117:3")
   }
-  test("dms -> dd test3 negative ") {
-    assert((Location.dms2dd(-38, 53, 23, 55)  + 38.8898749) < 0.000001)
-  }
-  test("dd -> dms test1 ") {
-    assert(Location.dd2dms(38.889875).toString == "(38,53,23,55)")
-  }
-  test("dd -> dms test2 ") {
-    assert(Location.dd2dms(-38.889875).toString == "(-38,53,23,55)")
-  }
+  test ("Simple Location test") {
+    var l = new Latitude(38, 53, 23, 55)
+    var a = new Altitude(38, 53, 23, 55)
 
-  // Location class test
-  test("dms initialization ") {
-    val d = new Location(38, 53, 23, 55)
-    //println(d.dd)
-    assert((d.dd - 38.889874999999996) < 0.000001)
-  }
+    val loc = new Location(l, a)
+    assert(loc.toBitSet().mkString(":") == "3:4:6:10:12:13:16:20:22:24:25:26:27:28:30:32:33:34:36:37:39:40:43:46:48:50:51:52:53:54:56:58:59:60:62:63")
+    assert(loc.toByteArray().mkString(":") == "88:52:81:95:-73:73:125:-35")
 
-  test("to byte array") {
-    var d = new Location(38, 53, 23, 55)
-    assert(d.toByteArray().mkString(":") == "38:-11:117:3")
-    d = new Location(-38, 53, 23, 55)
-    assert(d.toByteArray().mkString(":") == "-38:-11:117:3")
-  }
-
-  // byte array
-  test("byte array and location test") {
-    val b = new Location(38, 53, 23, 55)
-    val ba = b.toByteArray()
-    //println(ba.mkString(":"))
-    val b2 = new Location(ba)
-    //println(b2.toBitSet().mkString(":"))
-    assert(b2.dms == b.dms)
+    val x = new Location(loc.toByteArray())
+    assert(x.getA().toString == "(38,53,23,55)")
+    assert(x.getL().toString == "(38,53,23,55)")
   }
 }
