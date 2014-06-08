@@ -11,7 +11,7 @@ object Utils {
    */
   def byteArrayXor(a:Array[Byte], b:Array[Byte]) = {
     if (a.size != b.size) {
-      throw new Exception("Array size is not the same")
+      throw new Exception(s"Array size is not the same: ${a.size} != ${b.size}")
     }
     val newArray = new Array[Byte](a.size)
     var i = 0

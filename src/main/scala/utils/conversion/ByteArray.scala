@@ -10,10 +10,36 @@ import collection.mutable.{Map, ArrayBuffer}
  * http://stackoverflow.com/questions/2183240/java-integer-to-byte-array
  */
 object ByteArray {
+
+  /**
+   * Add more bytes to the value:Array[Byte]
+   *
+   * @param value
+   * @param originalSize
+   * @param goalSize
+   */
+  def adjust(value:Array[Byte], originalSize:Int, goalSize:Int, signExtension:Boolean = false) : Array[Byte] = {
+    if (goalSize == originalSize) return value // nothing to do when the goal size is the same as originalSize
+    if (goalSize < originalSize) throw new Exception(s"Goal size (${goalSize}}) should be larger than original size (${originalSize}})")
+
+
+    var v:Byte = 0
+    if (signExtension) {
+      // ByteBuffer uses BigEndian, so use the lower bytes to check the sign
+      if (value(0) < 0) v = -1.toByte
+    }
+    val head = Array.fill[Byte](goalSize - originalSize)(v)
+    head ++ value
+  }
+
   /*
     from Data : T -> ByteArray
    */
   def intToByteArray(x: Int) = dataToByteArray(x)
+  def intToByteArray(x: Int, size: Int) = {
+    val res = dataToByteArray(x)
+    adjust(value = res, originalSize = 4, goalSize = size, signExtension = true)
+  }
   def byteToByteArray(x: Byte) = dataToByteArray(x)
   def dataToByteArray(x: Int) = {
     ByteBuffer.allocate(4).putInt(x).array()

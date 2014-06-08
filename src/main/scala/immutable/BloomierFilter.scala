@@ -1,5 +1,7 @@
 package immutable
 
+import core._
+
 /**
  * Created by smcho on 6/2/14.
  */
@@ -25,11 +27,17 @@ class BloomierFilter(keysDict:Map[String, Any], m:Int, k:Int, q:Int, maxTry:Int 
   val orderAndMatch = oamf.find()
   val byteSize = hasher.getByteSize(q)
 
+  // setup the default encoder/decoder
+  var encoder : Encoder = new DefaultEncoder()
+  var decoder : Decoder = new DefaultDecoder()
+
   val table = Array.ofDim[Byte](m, byteSize)
   val hashSeed = orderAndMatch.hashSeed
   create(keysDict, orderAndMatch)
 
-  def get(key: String) = {
+  def setEncoderDecoder(encoder: Encoder, decoder: Decoder) = {this.encoder = encoder; this.decoder = decoder}
+
+  def get(key: String) : Option[Any] = {
     val neighbors = hasher.getNeighborhood(key, hashSeed)
     val mask = hasher.getM(key).toArray.map(_.toByte)
     var valueToRestore = mask
@@ -41,7 +49,7 @@ class BloomierFilter(keysDict:Map[String, Any], m:Int, k:Int, q:Int, maxTry:Int 
       for (n <- neighbors) {
         valueToRestore = utils.conversion.Utils.byteArrayXor(valueToRestore, table(n))
       }
-      core.Decode.decode(key, valueToRestore, byteSize)
+      decoder.decode(key, valueToRestore, byteSize)
     }
   }
 
@@ -54,7 +62,7 @@ class BloomierFilter(keysDict:Map[String, Any], m:Int, k:Int, q:Int, maxTry:Int 
       val l = orderAndMatch.tauList(i)
       val L = neighbors(l) // L is the index in the table to store the value
 
-      val encodedValue = core.Encode.encode(key, value, byteSize)
+      val encodedValue = encoder.encode(key, value , byteSize)
       var valueToStore = utils.conversion.Utils.byteArrayXor(mask, encodedValue)
 
       for ((n, j) <- neighbors.zipWithIndex) {
