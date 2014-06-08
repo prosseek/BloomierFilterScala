@@ -45,14 +45,20 @@ class BloomierFilter(keysDict:Map[String, Any], m:Int, k:Int, q:Int, maxTry:Int 
     var valueToRestore = mask
 
     // If all of the row data in the table is zero, it means it's garbage data
-    if (BloomierFilter.checkAllZeroElementsInTable(neighbors, table)) {
-      None
-    } else {
-      for (n <- neighbors) {
-        valueToRestore = utils.conversion.Utils.byteArrayXor(valueToRestore, table(n))
-      }
-      decoder.decode(key, valueToRestore, byteSize)
+    // Let's not be so smart for a while.
+    //
+    //    if (BloomierFilter.checkAllZeroElementsInTable(neighbors, table)) {
+    //      None
+    //    } else {
+    //      for (n <- neighbors) {
+    //        valueToRestore = utils.conversion.Utils.byteArrayXor(valueToRestore, table(n))
+    //      }
+    //      decoder.decode(key, valueToRestore, byteSize)
+    //    }
+    for (n <- neighbors) {
+      valueToRestore = utils.conversion.Utils.byteArrayXor(valueToRestore, table(n))
     }
+    decoder.decode(key, valueToRestore, byteSize)
   }
 
   def create(keysDict:Map[String, Any], orderAndMatch:core.OrderAndMatch) = {
@@ -74,5 +80,9 @@ class BloomierFilter(keysDict:Map[String, Any], m:Int, k:Int, q:Int, maxTry:Int 
       }
       table(L) = valueToStore
     }
+  }
+
+  def getSize() = {
+    m - this.table.count(p => p.forall(_ == 0))
   }
 }

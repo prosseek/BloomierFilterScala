@@ -47,7 +47,7 @@ object Hash {
    * @return
    */
   def getUniqueHashes(key: String, count: Int = 3, maxVal: Int = 100, startSeed: Int = 0) = {
-    if (count >= maxVal) throw new CustomException("Count should be smaller than maxVal")
+    if (count >= maxVal) throw new CustomException(s"Count (${count}}) should be smaller than maxVal (${maxVal}})")
 
     // when you can get the result with one attempt
     val set = getHashes(key, count, maxVal, startSeed).to[SortedSet]
