@@ -8,9 +8,9 @@ import utils.conversion.ByteArray
 class SimpleDecoder extends Decoder {
   def decode(key:String, value: Array[Byte], size:Int) = {
     key match  {
-      case "Name"  => Some(ByteArray.byteArrayToString(value))
-      case "Latitude" => Some(ByteArray.byteArrayToDouble(value))
-      case "Altitude" => Some(ByteArray.byteArrayToDouble(value))
+      case "Name"  => Some(ByteArray.byteArrayToString(value, size))
+      case "Latitude" => Some(ByteArray.byteArrayToDouble(value, size))
+      case "Altitude" => Some(ByteArray.byteArrayToDouble(value, size))
       case _ => throw new Exception("Not supported datatype")
     }
   }

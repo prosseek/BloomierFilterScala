@@ -35,33 +35,57 @@ object ByteArray {
   /*
     from Data : T -> ByteArray
    */
-  def intToByteArray(x: Int) = dataToByteArray(x)
-  def intToByteArray(x: Int, size: Int) = {
-    val res = dataToByteArray(x)
+
+  // int
+  def intToByteArray(x: Int) = ByteBuffer.allocate(4).putInt(x).array()
+  def intToByteArray(x: Int, size: Int) : Array[Byte] = {
+    val res = intToByteArray(x)
     adjust(value = res, originalSize = 4, goalSize = size, signExtension = true)
   }
-  def byteToByteArray(x: Byte) = dataToByteArray(x)
-  def dataToByteArray(x: Int) = {
-    ByteBuffer.allocate(4).putInt(x).array()
+
+  // long
+  def longToByteArray(x: Long) = ByteBuffer.allocate(8).putLong(x).array()
+  def longToByteArray(x: Long, size: Int) : Array[Byte] = {
+    val res = longToByteArray(x)
+    adjust(value = res, originalSize = 8, goalSize = size, signExtension = true)
   }
-  def dataToByteArray(x: Long) = {
-    ByteBuffer.allocate(8).putLong(x).array()
+
+  // byte
+  def byteToByteArray(x: Byte) = ByteBuffer.allocate(1).put(x).array()
+  def byteToByteArray(x: Byte, size: Int) : Array[Byte] = {
+    val res = byteToByteArray(x)
+    adjust(value = res, originalSize = 1, goalSize = size, signExtension = true)
   }
-  def dataToByteArray(x: Byte) = {
-    ByteBuffer.allocate(1).put(x).array()
-  }
+
+  // double
   def doubleToByteArray(x: Double) = {
     val l = java.lang.Double.doubleToLongBits(x)
-    dataToByteArray(l)
+    longToByteArray(l)
   }
+  def doubleToByteArray(x: Double, size:Int) = {
+    if (size < 8) throw new Exception(s"Double data should be at least 8 bytes, but given ${size}")
+    val l = java.lang.Double.doubleToLongBits(x)
+    adjust(longToByteArray(l), originalSize = 8, goalSize = size)
+  }
+
+  // float
   def floatToByteArray(x: Float) = {
     val l = java.lang.Float.floatToIntBits(x)
-    dataToByteArray(l)
+    intToByteArray(l)
   }
+  def floatToByteArray(x: Float, size:Int) = {
+    if (size < 4) throw new Exception(s"Float data should be at least 4 bytes, but given ${size}")
+    val l = java.lang.Float.floatToIntBits(x)
+    adjust(intToByteArray(l), originalSize = 4, goalSize = size)
+  }
+
+  // string
   def stringToByteArray(x: String, n:Int = 0) = {
+    // When n is given a value more than 0, it makes room for storing all of the n bytes
     val size = if (n <= 0) x.size else n
     ByteBuffer.allocate(size).put(x.slice(0, size).getBytes()).array()
   }
+
   def bitSetToByteArray(x:BitSet) = {
     val bits = Map[Int, Byte]().withDefaultValue(0)
     for (i <- x) {
@@ -80,30 +104,63 @@ object ByteArray {
   /*
     ByteArray to Data : T
    */
-  def byteArrayToString(x: Array[Byte]) = {
-    val loc = x.indexOf(0)
-    if (-1 == loc)
-      new String(x)
-    else if (0 == loc)
-      ""
-    else
-      new String(x.slice(0,loc))
+
+  /**
+   *
+   * @param x
+   * @param size - not used
+   * @return
+   */
+  def byteArrayToString(x: Array[Byte], size:Int = 0) = {
+    // detect the location of 0
+    // http://stackoverflow.com/questions/23976309/trimming-byte-array-when-converting-byte-array-to-string-in-java-scala
+    new String( x.array.takeWhile(_ != 0), "ASCII" )
   }
+  // byte
   def byteArrayToByte(x: Array[Byte]) = {
     ByteBuffer.wrap(x).get()
   }
+  def byteArrayToByte(x: Array[Byte], size:Int) = {
+    val value = x.slice(size - 1, size)
+    ByteBuffer.wrap(value).get()
+  }
+
+  // int
   def byteArrayToInt(x: Array[Byte]) = {
     ByteBuffer.wrap(x).getInt
   }
+  def byteArrayToInt(x: Array[Byte], size:Int) = {
+    val value = x.slice(size - 4, size)
+    ByteBuffer.wrap(value).getInt
+  }
+
+  // long
   def byteArrayToLong(x: Array[Byte]) = {
     ByteBuffer.wrap(x).getLong
   }
+  def byteArrayToLong(x: Array[Byte], size:Int) = {
+    val value = x.slice(size - 8, size)
+    ByteBuffer.wrap(value).getLong
+  }
+
+  // double
   def byteArrayToDouble(x: Array[Byte]) = {
     ByteBuffer.wrap(x).getDouble
   }
+  def byteArrayToDouble(x: Array[Byte], size:Int) = {
+    val value = x.slice(size - 8, size)
+    ByteBuffer.wrap(value).getDouble
+  }
+
+  // float
   def byteArrayToFloat(x: Array[Byte]) = {
     ByteBuffer.wrap(x).getFloat
   }
+  def byteArrayToFloat(x: Array[Byte], size:Int) = {
+    val value = x.slice(size - 4, size)
+    ByteBuffer.wrap(value).getFloat
+  }
+
   def byteArrayToBitSet(x:Array[Byte]) = {
     var res = ArrayBuffer[Int]()
     for ((v,i) <- x.zipWithIndex if v != 0) {

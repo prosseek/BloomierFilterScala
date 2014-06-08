@@ -21,21 +21,23 @@ object BloomierFilter {
   }
 }
 
-class BloomierFilter(keysDict:Map[String, Any], m:Int, k:Int, q:Int, maxTry:Int = 5, initialHashSeed:Int = 0) {
+class BloomierFilter(keysDict:Map[String, Any], m:Int, k:Int, q:Int, maxTry:Int = 5, initialHashSeed:Int = 0, enc:Encoder = null, dec:Decoder = null) {
   val hasher = core.BloomierHasher(m = m, k = k, q = q, hashSeed = initialHashSeed)
   val oamf = new core.OrderAndMatchFinder(keysDict = keysDict, m = m, k = k, q = q, maxTry = maxTry, initialHashSeed = initialHashSeed)
   val orderAndMatch = oamf.find()
   val byteSize = hasher.getByteSize(q)
 
+  var encoder: Encoder = enc
+  var decoder: Decoder = dec
   // setup the default encoder/decoder
-  var encoder : Encoder = new DefaultEncoder()
-  var decoder : Decoder = new DefaultDecoder()
+  if (enc == null && dec == null) {
+    this.encoder = new DefaultEncoder()
+    this.decoder = new DefaultDecoder()
+  }
 
   val table = Array.ofDim[Byte](m, byteSize)
   val hashSeed = orderAndMatch.hashSeed
   create(keysDict, orderAndMatch)
-
-  def setEncoderDecoder(encoder: Encoder, decoder: Decoder) = {this.encoder = encoder; this.decoder = decoder}
 
   def get(key: String) : Option[Any] = {
     val neighbors = hasher.getNeighborhood(key, hashSeed)
@@ -56,13 +58,13 @@ class BloomierFilter(keysDict:Map[String, Any], m:Int, k:Int, q:Int, maxTry:Int 
   def create(keysDict:Map[String, Any], orderAndMatch:core.OrderAndMatch) = {
 
     for ((key, i) <- orderAndMatch.piList.zipWithIndex) {
-      val value : Int = keysDict(key).asInstanceOf[Int]
+      //val value : Int = keysDict(key).asInstanceOf[Int]
       val neighbors = hasher.getNeighborhood(key, hashSeed)
       val mask = hasher.getM(key).toArray.map(_.toByte)
       val l = orderAndMatch.tauList(i)
       val L = neighbors(l) // L is the index in the table to store the value
 
-      val encodedValue = encoder.encode(key, value , byteSize)
+      val encodedValue = encoder.encode(key, keysDict , byteSize)
       var valueToStore = utils.conversion.Utils.byteArrayXor(mask, encodedValue)
 
       for ((n, j) <- neighbors.zipWithIndex) {
