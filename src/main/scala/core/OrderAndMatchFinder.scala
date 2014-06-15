@@ -13,6 +13,13 @@ class OrderAndMatchFinder(val keysDict:scala.collection.immutable.Map[String, An
   var tauList = List[Int]()
   var hashSeed = 0
 
+  // for debugging purposes
+  var depthCount = 0
+  var orderHistory : scala.collection.mutable.Map[Int, Any] = null
+
+  def getDepthCount() = depthCount
+  def getOrderHistory() = orderHistory
+
   /**
    * This is for debugging purposes
    * @param key
@@ -36,7 +43,8 @@ class OrderAndMatchFinder(val keysDict:scala.collection.immutable.Map[String, An
     for (k <- remainingKeysDict.keys) {
       // find the key has k that is not occupied by others
       val res = tweaker.tweak(k)
-      if (res != -1) {
+      // not -1 means that they found singular, so delete them.
+      if (res != SingletonFindingTweaker.NONSINGLETON) { // when the result is **singleton**
         piTemp += k
         tauTemp += res
       }
@@ -52,6 +60,10 @@ class OrderAndMatchFinder(val keysDict:scala.collection.immutable.Map[String, An
       if (findMatch(remainingKeysDict, hasher) == false)  return false
     }
 
+    // The deepest level values come this first recursively.
+    orderHistory(depthCount) = piTemp
+    depthCount += 1
+
     this.piList ++= piTemp
     this.tauList ++= tauTemp
 
@@ -65,6 +77,10 @@ class OrderAndMatchFinder(val keysDict:scala.collection.immutable.Map[String, An
       var newHashSeed = initialHashSeed * i * 100
       hashSeedList += newHashSeed
       val h = BloomierHasher(hashSeed = newHashSeed, m = m, k = k, q = q)
+
+      orderHistory = scala.collection.mutable.Map[Int, Any]()
+      depthCount = 0
+
       if (findMatch(remainKeys, h)) {
         this.hashSeed = newHashSeed
         return OrderAndMatch(hashSeed = newHashSeed, this.piList, this.tauList)
