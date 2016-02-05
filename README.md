@@ -1,4 +1,4 @@
-bloomierFilterScala
+BloomierFilterScala
 ===================
 
 bloomierFilterScala
