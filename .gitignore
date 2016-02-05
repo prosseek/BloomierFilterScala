@@ -8,7 +8,8 @@ target/
 project/
 
 # doc
-doc/_build
+doc/readthedocs/_build
+doc/scaladoc
 
 # Intellij
 .idea/
