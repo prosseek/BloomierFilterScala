@@ -1,10 +1,7 @@
 package core
 
-/**
- * Created by smcho on 6/1/14.
- */
+import util.hash._
 
-case class CustomException(val smth:String) extends Exception(smth)
 case class OrderAndMatch(val hashSeed:Int, val piList:List[String], val tauList:List[Int])
 
 class OrderAndMatchFinder(val keysDict:scala.collection.immutable.Map[String, Any],
@@ -25,7 +22,7 @@ class OrderAndMatchFinder(val keysDict:scala.collection.immutable.Map[String, An
    * @param key
    */
   def getNeighbors(key:String) = {
-    utils.hash.Hash.getUniqueHashes(key = key, count = k, maxVal = m, startSeed = hashSeed)
+    Hash.getUniqueHashes(key = key, count = k, maxVal = m, startSeed = hashSeed)
   }
 
   def findMatch(remainingKeysDict:scala.collection.mutable.Map[String, Any],
@@ -88,6 +85,6 @@ class OrderAndMatchFinder(val keysDict:scala.collection.immutable.Map[String, An
         remainKeys = collection.mutable.Map(this.keysDict.toSeq: _*)
       }
     }
-    throw new CustomException("Over max attempt")
+    throw new RuntimeException("Over max attempt")
   }
 }

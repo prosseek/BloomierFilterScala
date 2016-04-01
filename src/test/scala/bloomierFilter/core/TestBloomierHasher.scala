@@ -1,12 +1,18 @@
 package core
 
-import scala.util.Random
 import org.scalatest._
 
-/**
- * Created by smcho on 5/31/14.
- */
 class TestBloomierHasher extends FunSuite {
+
+  def noDuplication[T](list:List[T]) = {
+    val size = list.length
+    if (size == 0) true
+    else {
+      val set = list.toSet
+      set.size == size
+    }
+  }
+
   test ("Bloomier Parameter") {
     val p = BloomierParameter(hashSeed = 0, m = 10, k = 20, q = 30)
     val b = new BloomierHasher(p)
@@ -21,7 +27,7 @@ class TestBloomierHasher extends FunSuite {
     val b = new BloomierHasher(p)
     val n = b.getNeighborhood("KEY1")
     assert(n.size == p.k)
-    assert(utils.collection.Utils.noDuplication(n) == true)
+    assert(noDuplication(n) == true)
   }
 
   test ("getM returns q/8 + 1 random data under 255") {

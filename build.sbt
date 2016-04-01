@@ -1,4 +1,4 @@
-name := "bloomier_filter"
+name := "bloomierfilter"
 
 version := "0.1"
 
@@ -7,7 +7,7 @@ scalaVersion := "2.11.8"
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.6" % "test"
 target in Compile in doc := baseDirectory.value / "doc/api"
 
-libraryDependencies += "org.scalactic" %% "scalactic" % "2.2.6"
+libraryDependencies += "default" %% "chitchattypescala" % "0.1"
 
 // ScalaTest additional setup
 // http://www.scalatest.org/install
