@@ -1,4 +1,4 @@
-name := ""
+name := "bloomier_filter"
 
 version := "0.1"
 
