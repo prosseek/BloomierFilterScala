@@ -1,4 +1,4 @@
-package util.hash
+package util
 
 import scala.collection.mutable.SortedSet
 import scala.util.hashing.MurmurHash3

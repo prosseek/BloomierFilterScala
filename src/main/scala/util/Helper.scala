@@ -1,14 +1,16 @@
-package bloomierfilter.util
+package util
 
-import bloomierfilter.main.BloomierFilter
+import bloomierfilter.main.ByteArrayBloomierFilter
 
 object Helper
 {
   /**
     * Gvien two byteArrays return the xor one by one
+    *
     * @param a
     * @param b
     */
+  // TODO: if a or b is null, or all zero, return the other one
   def byteArrayXor(a:Array[Byte], b:Array[Byte]) = {
     if (a.size != b.size) {
       throw new Exception(s"Array size is not the same: ${a.size} != ${b.size}")
@@ -22,13 +24,12 @@ object Helper
     newArray
   }
 
-  def createMapWithUppercaseKeys(keysDictInput:Map[String, Any]) = {
-    val map = collection.mutable.Map[String, Any]()
+  def createMapWithUppercaseKeys(keysDictInput:Map[String, Array[Byte]]) = {
+    val map = collection.mutable.Map[String, Array[Byte]]()
     for ((key,value) <- keysDictInput) {
       map(key.toUpperCase()) = value
     }
 
-    // returns a non-mutable map
     collection.immutable.Map(map.toSeq: _*)
   }
 
@@ -43,15 +44,15 @@ object Helper
     true
   }
 
-  def printContents(bf:BloomierFilter) : Unit = {
+  def printContents(bf: ByteArrayBloomierFilter) : Unit = {
     printContents(bf, bf.keysDict.keys)
   }
 
-  def printContents(bf:BloomierFilter, keys: Iterable[String]) : Unit = {
+  def printContents(bf: ByteArrayBloomierFilter, keys: Iterable[String]) : Unit = {
     println("BL---------------------------------------------")
     println(s"Size in bytes : ${bf.size}")
     for (key <- keys) {
-      println(s"KEY($key) => ${bf.get(key).getOrElse(null)}")
+      println(s"KEY($key) => ${bf.getByteArray(key).getOrElse(null)}")
     }
     println("---------------------------------------------BL")
   }

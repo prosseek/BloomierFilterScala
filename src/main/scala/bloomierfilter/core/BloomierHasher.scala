@@ -1,5 +1,7 @@
 package bloomierfilter.core
 
+import util.Hash
+
 class BloomierHasher(val m:Int = 100, val k:Int = 3, val q:Int = 32, val hashSeed:Int = 0) {
   val byteSize = util.conversion.Util.getBytesForBits(q)
 
@@ -10,7 +12,7 @@ class BloomierHasher(val m:Int = 100, val k:Int = 3, val q:Int = 32, val hashSee
    * @return
    */
   def getM(key: String, hashSeed:Int = hashSeed) = {
-    util.hash.Hash.getUniqueHashes(key = key, count = this.byteSize, maxVal = 256, startSeed = hashSeed)
+    Hash.getUniqueHashes(key = key, count = this.byteSize, maxVal = 256, startSeed = hashSeed)
   }
 
   /** Returns `k` unique (not duplicate) hash values from input string key
@@ -20,6 +22,6 @@ class BloomierHasher(val m:Int = 100, val k:Int = 3, val q:Int = 32, val hashSee
     * @return
     */
   def getNeighborhood(key:String, hashSeed:Int = hashSeed) = {
-    util.hash.Hash.getUniqueHashes(key = key, count = this.k, maxVal = this.m, startSeed = hashSeed)
+    util.Hash.getUniqueHashes(key = key, count = this.k, maxVal = this.m, startSeed = hashSeed)
   }
 }

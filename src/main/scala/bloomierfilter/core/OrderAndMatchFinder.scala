@@ -1,6 +1,6 @@
 package bloomierfilter.core
 
-import util.hash._
+import util.Hash
 
 case class OrderAndMatch(val hashSeed:Int, val piList:List[String], val tauList:List[Int])
 

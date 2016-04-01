@@ -3,7 +3,7 @@ package util.hash
 import org.scalatest._
 
 import scala.util.Random
-import util.Check
+import util.{Check, Hash}
 
 import scala.collection.mutable.ArrayBuffer
 
