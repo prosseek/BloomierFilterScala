@@ -1,11 +1,10 @@
-package core
+package bloomierfilter.core
 
 import util.hash._
 
 case class OrderAndMatch(val hashSeed:Int, val piList:List[String], val tauList:List[Int])
 
-class OrderAndMatchFinder(val keysDict:scala.collection.immutable.Map[String, Any],
-                          val m:Int, val k:Int, val q:Int, val maxTry:Int = 5, val initialHashSeed:Int = 0) {
+class OrderAndMatchFinder(val keysDict: Map[String, Any], val m: Int, val k: Int, val maxTry: Int = 5, val initialHashSeed: Int = 0) {
   var piList = List[String]()
   var tauList = List[Int]()
   var hashSeed = 0
@@ -14,11 +13,9 @@ class OrderAndMatchFinder(val keysDict:scala.collection.immutable.Map[String, An
   var depthCount = 0
   var orderHistory : scala.collection.mutable.Map[Int, Any] = null
 
-  def getDepthCount() = depthCount
-  def getOrderHistory() = orderHistory
-
   /**
    * This is for debugging purposes
+ *
    * @param key
    */
   def getNeighbors(key:String) = {
@@ -73,7 +70,7 @@ class OrderAndMatchFinder(val keysDict:scala.collection.immutable.Map[String, An
     for (i <- 0 until maxTry) {
       var newHashSeed = initialHashSeed * i * 100
       hashSeedList += newHashSeed
-      val h = BloomierHasher(hashSeed = newHashSeed, m = m, k = k, q = q)
+      val h = new BloomierHasher(hashSeed = newHashSeed, m = m, k = k)
 
       orderHistory = scala.collection.mutable.Map[Int, Any]()
       depthCount = 0
@@ -85,6 +82,6 @@ class OrderAndMatchFinder(val keysDict:scala.collection.immutable.Map[String, An
         remainKeys = collection.mutable.Map(this.keysDict.toSeq: _*)
       }
     }
-    throw new RuntimeException("Over max attempt")
+    throw new RuntimeException(s"Over max attempt ${maxTry}")
   }
 }

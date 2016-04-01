@@ -7,7 +7,7 @@ scalaVersion := "2.11.8"
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.6" % "test"
 target in Compile in doc := baseDirectory.value / "doc/api"
 
-libraryDependencies += "default" %% "chitchattypescala" % "0.1"
+libraryDependencies += "chitchattype" %% "chitchattype" % "0.1"
 
 // ScalaTest additional setup
 // http://www.scalatest.org/install

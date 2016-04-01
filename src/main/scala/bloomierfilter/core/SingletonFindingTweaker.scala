@@ -1,8 +1,5 @@
-package core
+package bloomierfilter.core
 
-/**
- * Created by smcho on 6/1/14.
- */
 object SingletonFindingTweaker {
   val NONSINGLETON = -1
 }
@@ -26,7 +23,7 @@ class SingletonFindingTweaker (val keysDict:Map[String, Any], hasher: BloomierHa
 
   /**
    * returns index (i) when duplication found
-   * or return -1 to indicate it's singleton
+   * or return -1 to indicate it's not singleton
    *
    * @param key
    * @return
