@@ -3,7 +3,7 @@ package util.hash
 import org.scalatest._
 
 import scala.util.Random
-import util.{Check, Hash}
+import util._
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -67,7 +67,7 @@ class TestHash extends FunSuite {
       val maxValue = count + 20
       val result = Hash.getUniqueHashes("Hash values, count, maxVal", count, maxValue)
       assert(result.size == count)
-      assert(Check.noDuplication(result) == true)
+      assert(Helper.noDuplication(result) == true)
     }
   }
 

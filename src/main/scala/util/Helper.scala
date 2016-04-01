@@ -24,6 +24,21 @@ object Helper
     newArray
   }
 
+  /**
+    * Check if input list has no duplication
+    *
+    * @param list
+    * @tparam T
+    */
+  def noDuplication[T](list:Seq[T]) = {
+    val size = list.size
+    if (size == 0) true
+    else {
+      val set = list.toSet
+      set.size == size
+    }
+  }
+
   def createMapWithUppercaseKeys(keysDictInput:Map[String, Array[Byte]]) = {
     val map = collection.mutable.Map[String, Array[Byte]]()
     for ((key,value) <- keysDictInput) {
