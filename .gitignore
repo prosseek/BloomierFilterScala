@@ -1,15 +1,23 @@
+# sbt specific
+.cache/
+.history/
+.lib/
+
+target/*
+project/*
+out/*
+doc/api/*
+
+# Python
+.pyc
+
+# idea
+
+**/.idea/workspace.xml
+**/.idea/tasks.xml
+
 *.class
 *.log
 *.cache
 
-# sbt specific
-dist/
-target/
-project/
-
-# doc
-doc/readthedocs/_build
-doc/scaladoc
-
-# Intellij
-.idea/
+.DS_Store

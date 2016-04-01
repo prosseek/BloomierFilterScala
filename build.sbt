@@ -1,6 +1,17 @@
-name := "bloomierFilterScala"
+name := ""
 
-version := "1.0"
+version := "0.1"
 
-libraryDependencies += "org.scalatest" % "scalatest_2.10" % "2.0" % "test"
+scalaVersion := "2.11.8"
 
+libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.6" % "test"
+target in Compile in doc := baseDirectory.value / "doc/api"
+
+libraryDependencies += "org.scalactic" %% "scalactic" % "2.2.6"
+
+// ScalaTest additional setup
+// http://www.scalatest.org/install
+//
+// If you need to add classpath directory
+// <http://stackoverflow.com/questions/23357490/add-directory-to-classpath-in-build-scala-of-sbt>
+// (fullClasspath in Test) += Attributed.blank(file("./src/test/resources/util/file/"))
