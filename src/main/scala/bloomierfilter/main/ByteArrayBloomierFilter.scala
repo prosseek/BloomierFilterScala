@@ -5,14 +5,14 @@ import util.{Decoder, Encoder, Helper}
 
 import scala.collection.mutable.ArrayBuffer
 
-class ByteArrayBloomierFilter(val keysDictInput:Map[String, Array[Byte]],
+class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]],
                               val m:Int, val k:Int, val q:Int,
                               val maxTry: Int = 5, val initialHashSeed:Int = 0, val caseSensitive: Boolean = true) {
   val Q = util.conversion.Util.getBytesForBits(q)
 
-  val n = keysDictInput.size
+  val n = input.size
 
-  val keysDict = if (caseSensitive) keysDictInput else Helper.createMapWithUppercaseKeys(keysDictInput)
+  val keysDict = if (caseSensitive) input else Helper.createMapWithUppercaseKeys(input)
   val hasher = new core.BloomierHasher(m = m, k = k, q = q, hashSeed = initialHashSeed)
   val oamf = new core.OrderAndMatchFinder(keysDict = keysDict, m = m, k = k, maxTry = maxTry, initialHashSeed = initialHashSeed)
   val orderAndMatch = oamf.find()
@@ -46,8 +46,8 @@ class ByteArrayBloomierFilter(val keysDictInput:Map[String, Array[Byte]],
 
       if (keysDict(key) != null) {
         val encodedValue = keysDict(key)
-        if (encodedValue .size != Q)
-          throw new RuntimeException(s"byte array size (${encodedValue}) is not the same as Q(${Q})")
+        if (encodedValue.size != Q)
+          throw new RuntimeException(s"byte array size (${encodedValue.size}) is not the same as Q(${Q})")
         var valueToStore = Helper.byteArrayXor(mask, encodedValue)
 
         for ((n, j) <- neighbors.zipWithIndex) {
