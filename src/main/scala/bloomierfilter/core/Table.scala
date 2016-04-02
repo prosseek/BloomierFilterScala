@@ -1,25 +1,30 @@
 package bloomierfilter.core
 
+import scala.collection.mutable
+import scala.collection.mutable.{Map => MMap}
 /**
   * Created by smcho on 4/1/16.
   */
 class Table(val m:Int, val Q:Int) {
-  val table = Array.ofDim[Byte](m, Q)
+  //val table = Array.ofDim[Byte](m, Q)
+  val table = MMap[Int, Array[Byte]]()
 
   def calculate_non_zero_n = {
     // we cannot use N because of CBF
-    m - table.count(p => p.forall(_ == 0))
+    //m - table.count(p => p.forall(_ == 0))
+    table.size
   }
 
-  def checkZeroElement(element: Seq[Byte]) : Boolean = {
-    element.forall(_ == 0)
-  }
+//  def checkZeroElement(element: Seq[Byte]) : Boolean = {
+//    element.forall(_ == 0)
+//  }
 
   def checkAllZeroElementsInTable(neighbors: Seq[Int]) : Boolean = {
-    for (n <- neighbors) {
-      if (!checkZeroElement(table(n))) return false
-    }
-    true
+    neighbors.forall(!table.keySet.contains(_))
+//    for (n <- neighbors) {
+//      if (!checkZeroElement(table(n))) return false
+//    }
+//    true
   }
 
   /**
@@ -28,9 +33,11 @@ class Table(val m:Int, val Q:Int) {
     * @param a
     * @param j
     */
-  // TODO: if a or b is null, or all zero, return the other one
   def byteArrayXor(a:Array[Byte], j:Int) : Array[Byte] = {
-    byteArrayXor(a, table(j))
+    if (table.keySet.contains(j))
+      byteArrayXor(a, table(j))
+    else
+      a
   }
 
   def byteArrayXor(a:Array[Byte], b:Array[Byte]) : Array[Byte] = {
@@ -47,12 +54,17 @@ class Table(val m:Int, val Q:Int) {
   }
 
   def apply(index:Int) = table(index)
+  def update(index:Int, value:Array[Byte]) = table(index) = value
 
-  def set(index:Int, value:Array[Byte]) = table(index) = value
 
-  def size = 111
+  def size = serialize.size
 
   def serialize = Array[Byte]()
 
-  def n = ???
+  def getNonzeroLocation = {
+    val bs = mutable.BitSet()
+    table.keysIterator.foreach(bs.add(_))
+  }
+
+  def n = -1 // We do not know the size
 }

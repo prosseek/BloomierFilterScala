@@ -127,7 +127,7 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]],
             valueToStore = table.byteArrayXor(valueToStore, n)
           }
         }
-        table.set(L, valueToStore)
+        table(L) = valueToStore
       }
     }
   }
