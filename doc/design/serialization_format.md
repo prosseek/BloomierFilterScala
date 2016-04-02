@@ -9,6 +9,8 @@ The information needed for storing "ByteArrayBloomierFilter"
 
 #### Table
 * table: m/8 + Q*n
+    * m/8 - location bits
+    * Q*n - byte arrays
 
 #### Things to consider
 

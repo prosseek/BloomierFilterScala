@@ -1,13 +1,15 @@
 package bloomierfilter.core
 
-import scala.collection.mutable
+import scala.collection.{BitSet, mutable}
 import scala.collection.mutable.{Map => MMap}
 /**
   * Created by smcho on 4/1/16.
   */
 class Table(val m:Int, val Q:Int) {
   //val table = Array.ofDim[Byte](m, Q)
-  val table = MMap[Int, Array[Byte]]()
+  var table = MMap[Int, Array[Byte]]()
+  // from m, we know the size of location header
+  val M = util.conversion.Util.getBytesForBits(m)
 
   def calculate_non_zero_n = {
     // we cannot use N because of CBF
@@ -15,16 +17,8 @@ class Table(val m:Int, val Q:Int) {
     table.size
   }
 
-//  def checkZeroElement(element: Seq[Byte]) : Boolean = {
-//    element.forall(_ == 0)
-//  }
-
   def checkAllZeroElementsInTable(neighbors: Seq[Int]) : Boolean = {
     neighbors.forall(!table.keySet.contains(_))
-//    for (n <- neighbors) {
-//      if (!checkZeroElement(table(n))) return false
-//    }
-//    true
   }
 
   /**
@@ -56,15 +50,36 @@ class Table(val m:Int, val Q:Int) {
   def apply(index:Int) = table(index)
   def update(index:Int, value:Array[Byte]) = table(index) = value
 
+  def size = 1 // serialize.size
 
-  def size = serialize.size
-
-  def serialize = Array[Byte]()
-
-  def getNonzeroLocation = {
+  def getNonzeroLocations = {
     val bs = mutable.BitSet()
     table.keysIterator.foreach(bs.add(_))
   }
 
   def n = -1 // We do not know the size
+
+  def createTable(byteArray:Array[Byte]) = {
+
+    table = MMap[Int, Array[Byte]]()
+
+    def getSubByteArray(index:Int, byteArray:Array[Byte]) = {
+      byteArray.slice(Q*index, Q*(1 + index))
+    }
+
+    val locationBits = byteArray.slice(0, M)
+    val byteArrays = byteArray.slice(M, byteArray.size)
+
+    val locationBitsBitSet = util.conversion.ByteArrayTool.byteArrayToBitSet(locationBits)
+    locationBitsBitSet.toSeq.sorted.zipWithIndex.foreach {
+      case (location, index) => {
+        table(location) = getSubByteArray(index, byteArrays)
+      }
+    }
+  }
+
+  def serialize = {
+    val locationBitsByteArray = util.conversion.ByteArrayTool.bitSetToByteArray(BitSet(table.keySet.toSeq:_*))
+    (locationBitsByteArray /: table.keys.toSeq.sorted) ((acc, key) => acc ++ table(key))
+  }
 }
