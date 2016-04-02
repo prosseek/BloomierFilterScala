@@ -109,7 +109,9 @@ class OrderAndMatchFinder(val keysDict: Map[String, Any], var m: Int, val k: Int
         null
     }
 
-    if (m == 0) {
+    if (m > 0) { // when m is given, find the ordering with the given value
+      findOrderAndMatch(m)
+    } else {
       // when m = 0, we try to find the minimum value that finds the findOrderAndMatch
       // the initial value is n (keysDict.size)*1.5
       var tryM = (keysDict.size * 2.0 + 0.5).toInt
@@ -130,7 +132,5 @@ class OrderAndMatchFinder(val keysDict: Map[String, Any], var m: Int, val k: Int
       this.m = OrderAndMatchFinder.MAXIMUM_M // no error means success
       res
     }
-    else // when m is given, we try upto maxTry
-      findOrderAndMatch(m)
   }
 }

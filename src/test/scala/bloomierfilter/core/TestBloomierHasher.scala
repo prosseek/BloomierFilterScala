@@ -8,7 +8,7 @@ class TestBloomierHasher extends FunSuite {
     val b = new BloomierHasher(hashSeed = 0, m = 10, k = 3, q = 32)
     val n = b.getNeighborhood("KEY1")
     assert(n.size == 3)
-    assert(helper.Util.noDuplication(n) == true)
+    assert(util.Util.noDuplication(n) == true)
   }
 
   test ("getM returns q/8 + 1 random data under 255") {

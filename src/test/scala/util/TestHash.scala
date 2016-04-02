@@ -67,7 +67,7 @@ class TestHash extends FunSuite {
       val maxValue = count + 20
       val result = Hash.getUniqueHashes("Hash values, count, maxVal", count, maxValue)
       assert(result.size == count)
-      assert(Helper.noDuplication(result) == true)
+      assert(util.Util.noDuplication(result) == true)
     }
   }
 

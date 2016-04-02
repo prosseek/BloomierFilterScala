@@ -1,28 +1,49 @@
 package bloomierfilter.main
 
-import bloomierfilter.core
-import util.{Decoder, Encoder, Helper}
+import bloomierfilter.core._
 
 object ByteArrayBloomierFilter {
-  def setupParameters(byteArray:Array[Byte]) = {
-    val m = 3
-    val n = 2
-    val k = 3
-    val q = 3
-    val hashSeed = 0
+  val HEADER_SIZE = 2
+
+  private def createMapWithUppercaseKeys(keysDictInput:Map[String, Array[Byte]]) = {
+    val map = collection.mutable.Map[String, Array[Byte]]()
+    for ((key,value) <- keysDictInput) {
+      map(key.toUpperCase()) = value
+    }
+
+    collection.immutable.Map(map.toSeq: _*)
+  }
+
+  private def analyzeSerialized(byteArray:Array[Byte]) = {
+
+    val header = new Header(byteArray.slice(0, HEADER_SIZE))
+    val m = header.m
+    val k = header.k
+    val q = header.q
+    val hashSeed = header.hashSeed
     val Q = util.conversion.Util.getBytesForBits(q)
-    val table = new core.Table(m, Q)
-    (m, k, q, Q, hashSeed, table, n)
+
+    val table = new Table(m, Q)
+    val hasher = new BloomierHasher(m = m, k = k, q = q, hashSeed = hashSeed)
+
+    val n = table.n
+
+    (m, k, q, Q, hashSeed, table, header, hasher, n)
   }
 
   def apply(byteArray: Array[Byte]):ByteArrayBloomierFilter = {
-    val (m, k, q, qq, hashSeed, table, n) = setupParameters(byteArray)
+    val (m, k, q, qq, hashSeed, table, header, hasher, n) = analyzeSerialized(byteArray)
     val babf = new ByteArrayBloomierFilter(null, initialm = m, k = k, q = q)
 
     babf.Q = qq
     babf.hashSeed = hashSeed
-    babf.table = table
     babf.n = n
+
+    babf.table = table
+    babf.header = header
+    babf.hasher = hasher
+
+    babf.non_zero_n = table.calculate_non_zero_n
 
     babf
   }
@@ -50,50 +71,45 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]],
   // parameters that defines Bloomier Filter
   var Q:Int = _
   var hashSeed:Int = _
-  var table: core.Table = _
   var n:Int = _
   var m = initialm // initially m is set to the given value, it will be updated when m = 0
+  var non_zero_n : Int = _
 
-  // when BF is constructed from input map
-  var hasher:core.BloomierHasher = _
-  var orderAndMatch: core.OrderAndMatch = _
-  var keysDict: Map[String, Array[Byte]] = _
+  // objects that defines Bloomier filter
+  var table: Table = _
+  var header: Header = _
+  var hasher: BloomierHasher = _
 
   if (input != null) {
-    keysDict = if (caseSensitive) input else Helper.createMapWithUppercaseKeys(input)
-    val oamf = new core.OrderAndMatchFinder(keysDict = keysDict, m = m, k = k, maxTry = maxTry, initialHashSeed = initialHashSeed)
-    orderAndMatch = oamf.find()
+    // 1. find the ordering of the keys
+    //    1.1 we get `m` if m == 0 (user's request to calculate m)
+    //    1.2 we get hashSeed that enables the ordering
+    val keysDict = if (caseSensitive) input else ByteArrayBloomierFilter.createMapWithUppercaseKeys(input)
+    val oamf = new OrderAndMatchFinder(keysDict = keysDict, m = m, k = k, maxTry = maxTry, initialHashSeed = initialHashSeed)
+    val orderAndMatch = oamf.find()
+    hashSeed = orderAndMatch.hashSeed
     if (m == 0) {
       m = oamf.m
     }
-    // This m should not be 0
-    hasher = new core.BloomierHasher(m = m, k = k, q = q, hashSeed = initialHashSeed)
 
+    // 2. make the hasher with updated m and hashSeed
+    hasher = new BloomierHasher(m = m, k = k, q = q, hashSeed = initialHashSeed)
+
+    // 3. set other parameters
     Q = util.conversion.Util.getBytesForBits(q)
-    hashSeed = orderAndMatch.hashSeed
-    table = new core.Table(m, Q)
+    table = new Table(m, Q)
     n = input.size
 
-    create
+    // 4. create and set the table
+    createTable(orderAndMatch, keysDict)
+
+    // 5. set non_zero_n parameters with created table
+    non_zero_n = table.calculate_non_zero_n
   }
 
-  def getByteArray(keyInput: String) : Option[Array[Byte]] = {
-    val key = if (caseSensitive) keyInput else keyInput.toUpperCase()
-    val neighbors = hasher.getNeighborhood(key, hashSeed)
-    val mask = hasher.getM(key).toArray.map(_.toByte)
-    var valueToRestore = mask
 
-    if (Helper.checkAllZeroElementsInTable(neighbors, table.table)) {
-      None
-    } else {
-      for (n <- neighbors) {
-        valueToRestore = Helper.byteArrayXor(valueToRestore, table.table(n))
-      }
-      Some(valueToRestore)
-    }
-  }
 
-  def create = {
+  private def createTable(orderAndMatch: OrderAndMatch, keysDict: Map[String, Array[Byte]]) = {
     for ((key, i) <- orderAndMatch.piList.zipWithIndex) {
       val neighbors = hasher.getNeighborhood(key, hashSeed)
       val mask = hasher.getM(key).toArray.map(_.toByte)
@@ -104,32 +120,46 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]],
         val encodedValue = keysDict(key)
         if (encodedValue.size != Q)
           throw new RuntimeException(s"byte array size (${encodedValue.size}) is not the same as Q(${Q})")
-        var valueToStore = Helper.byteArrayXor(mask, encodedValue)
+        var valueToStore = table.byteArrayXor(mask, encodedValue)
 
         for ((n, j) <- neighbors.zipWithIndex) {
           if (j != l) {
-            valueToStore = Helper.byteArrayXor(valueToStore, table.table(n))
+            valueToStore = table.byteArrayXor(valueToStore, n)
           }
         }
-        table.table(L) = valueToStore
+        table.set(L, valueToStore)
       }
     }
   }
 
+  // Public APIs
+
   /**
-    * Get the size of r (m that is not zero)
     *
+    * @param keyInput
     * @return
     */
-  def calculateN = {
-    // we cannot use N because of CBF
-    m - table.table.count(p => p.forall(_ == 0))
+  def getByteArray(keyInput: String) : Option[Array[Byte]] = {
+    val key = if (caseSensitive) keyInput else keyInput.toUpperCase()
+    val neighbors = hasher.getNeighborhood(key, hashSeed)
+    val mask = hasher.getM(key).toArray.map(_.toByte)
+    var valueToRestore = mask
+
+    if (table.checkAllZeroElementsInTable(neighbors)) {
+      None
+    } else {
+      for (n <- neighbors) {
+        valueToRestore = table.byteArrayXor(valueToRestore, n)
+      }
+      Some(valueToRestore)
+    }
   }
 
   def size = {
-    calculateN * Q + util.conversion.Util.getBytesForBits(m)
+    non_zero_n * Q + util.conversion.Util.getBytesForBits(m)
   }
 
-  def serialize = ???
-  def deserialize = ???
+  def serialized_size = header.size + table.size
+
+  def serialize = header.serialize ++ table.serialize
 }
