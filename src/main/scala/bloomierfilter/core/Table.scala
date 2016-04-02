@@ -50,14 +50,10 @@ class Table(val m:Int, val Q:Int) {
   def apply(index:Int) = table(index)
   def update(index:Int, value:Array[Byte]) = table(index) = value
 
-  def size = 1 // serialize.size
-
   def getNonzeroLocations = {
     val bs = mutable.BitSet()
     table.keysIterator.foreach(bs.add(_))
   }
-
-  def n = -1 // We do not know the size
 
   def createTable(byteArray:Array[Byte]) = {
 
@@ -78,8 +74,10 @@ class Table(val m:Int, val Q:Int) {
     }
   }
 
-  def serialize = {
+  def serialize : Array[Byte] = {
     val locationBitsByteArray = util.conversion.ByteArrayTool.bitSetToByteArray(BitSet(table.keySet.toSeq:_*))
     (locationBitsByteArray /: table.keys.toSeq.sorted) ((acc, key) => acc ++ table(key))
   }
+
+  def size = M + Q*table.size
 }

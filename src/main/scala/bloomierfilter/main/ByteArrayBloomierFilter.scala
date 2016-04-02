@@ -4,6 +4,7 @@ import bloomierfilter.core._
 
 object ByteArrayBloomierFilter {
   val HEADER_SIZE = 2
+  val UNKNOWN = -1
 
   private def createMapWithUppercaseKeys(keysDictInput:Map[String, Array[Byte]]) = {
     val map = collection.mutable.Map[String, Array[Byte]]()
@@ -16,23 +17,26 @@ object ByteArrayBloomierFilter {
 
   private def analyzeSerialized(byteArray:Array[Byte]) = {
 
-    val header = new Header(byteArray.slice(0, HEADER_SIZE))
+    val header = Header(byteArray.slice(0, HEADER_SIZE))
+
     val m = header.m
     val k = header.k
-    val q = header.q
+    val Q = header.Q
     val hashSeed = header.hashSeed
-    val Q = util.conversion.Util.getBytesForBits(q)
+    val q = Q * 8
 
+    val serializedTable = byteArray.slice(HEADER_SIZE, byteArray.size)
     val table = new Table(m, Q)
+    table.createTable(serializedTable)
+
     val hasher = new BloomierHasher(m = m, k = k, q = q, hashSeed = hashSeed)
+    val n = UNKNOWN // use non_zero_n instead
 
-    val n = table.n
-
-    (m, k, q, Q, hashSeed, table, header, hasher, n)
+    (m, k, q, Q, hashSeed, table, hasher, n)
   }
 
   def apply(byteArray: Array[Byte]):ByteArrayBloomierFilter = {
-    val (m, k, q, qq, hashSeed, table, header, hasher, n) = analyzeSerialized(byteArray)
+    val (m, k, q, qq, hashSeed, table, hasher, n) = analyzeSerialized(byteArray)
     val babf = new ByteArrayBloomierFilter(null, initialm = m, k = k, q = q)
 
     babf.Q = qq
@@ -40,7 +44,6 @@ object ByteArrayBloomierFilter {
     babf.n = n
 
     babf.table = table
-    babf.header = header
     babf.hasher = hasher
 
     babf.non_zero_n = table.calculate_non_zero_n
@@ -65,7 +68,7 @@ object ByteArrayBloomierFilter {
   * @param caseSensitive
   */
 class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]],
-                              val initialm:Int, val k:Int, val q:Int,
+                              val initialm:Int = 0, val k:Int = 3, val q:Int,
                               var maxTry: Int = 5, var initialHashSeed:Int = 0, var caseSensitive: Boolean = false) {
 
   // parameters that defines Bloomier Filter
@@ -106,8 +109,6 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]],
     // 5. set non_zero_n parameters with created table
     non_zero_n = table.calculate_non_zero_n
   }
-
-
 
   private def createTable(orderAndMatch: OrderAndMatch, keysDict: Map[String, Array[Byte]]) = {
     for ((key, i) <- orderAndMatch.piList.zipWithIndex) {
@@ -161,5 +162,19 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]],
 
   def serialized_size = header.size + table.size
 
-  def serialize = header.serialize ++ table.serialize
+  def serialize = {
+    // you need header for serialization
+    header = Header(m = m, Q = Q, hashSeed = hashSeed)
+
+    if (k != 3) {
+      throw new RuntimeException(s"Only k == 3 is allowed in serialization process, you provided ${k}")
+    }
+    if (!Set(1,2,4,8).contains(Q)) {
+      throw new RuntimeException(s"Only 1/2/4/8 is allowed in serialization process, you provided ${Q}")
+    }
+    val serializedHeader = header.serialize(m = m, Q = Q, hashValue = hashSeed)
+    val serializedTable = table.serialize
+
+    serializedHeader ++ serializedTable
+  }
 }
