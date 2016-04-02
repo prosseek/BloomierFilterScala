@@ -4,7 +4,7 @@ import util.Hash
 
 case class OrderAndMatch(val hashSeed:Int, val piList:List[String], val tauList:List[Int])
 
-class OrderAndMatchFinder(val keysDict: Map[String, Any], val m: Int, val k: Int, val maxTry: Int = 5, val initialHashSeed: Int = 0) {
+class OrderAndMatchFinder(val keysDict: Map[String, Any], var m: Int, val k: Int, val maxTry: Int = 5, val initialHashSeed: Int = 0) {
   var piList = List[String]()
   var tauList = List[Int]()
   var hashSeed = 0
@@ -65,23 +65,35 @@ class OrderAndMatchFinder(val keysDict: Map[String, Any], val m: Int, val k: Int
   }
 
   def find() : OrderAndMatch = {
-    var remainKeys = collection.mutable.Map(this.keysDict.toSeq: _*)
-    val hashSeedList = scala.collection.mutable.ListBuffer[Int]()
-    for (i <- 0 until maxTry) {
-      var newHashSeed = initialHashSeed * i * 100
-      hashSeedList += newHashSeed
-      val h = new BloomierHasher(hashSeed = newHashSeed, m = m, k = k)
 
-      orderHistory = scala.collection.mutable.Map[Int, Any]()
-      depthCount = 0
+    def findOrderAndMatch() : OrderAndMatch = {
+      var remainKeys = collection.mutable.Map(this.keysDict.toSeq: _*)
+      val hashSeedList = scala.collection.mutable.ListBuffer[Int]()
 
-      if (findMatch(remainKeys, h)) {
-        this.hashSeed = newHashSeed
-        return OrderAndMatch(hashSeed = newHashSeed, this.piList, this.tauList)
-      } else {
-        remainKeys = collection.mutable.Map(this.keysDict.toSeq: _*)
+      for (j <- 0 until maxTry) {
+        // when we cannot find the order and match with the iital hash value
+        // we change the seed value and try again
+        var newHashSeed = initialHashSeed + j
+        hashSeedList += newHashSeed
+        val h = new BloomierHasher(hashSeed = newHashSeed, m = m, k = k)
+
+        orderHistory = scala.collection.mutable.Map[Int, Any]()
+        depthCount = 0
+
+        if (findMatch(remainKeys, h)) {
+          this.hashSeed = newHashSeed
+          return OrderAndMatch(hashSeed = newHashSeed, this.piList, this.tauList)
+        } else {
+          remainKeys = collection.mutable.Map(this.keysDict.toSeq: _*)
+        }
       }
+      throw new RuntimeException(s"Over max attempt ${maxTry}")
     }
-    throw new RuntimeException(s"Over max attempt ${maxTry}")
+
+    if (m == 0) {
+      findOrderAndMatch()
+    }
+    else
+      findOrderAndMatch()
   }
 }
