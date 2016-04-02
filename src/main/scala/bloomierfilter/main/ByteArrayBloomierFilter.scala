@@ -61,12 +61,13 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]],
 
   if (input != null) {
     keysDict = if (caseSensitive) input else Helper.createMapWithUppercaseKeys(input)
-    hasher = new core.BloomierHasher(m = m, k = k, q = q, hashSeed = initialHashSeed)
     val oamf = new core.OrderAndMatchFinder(keysDict = keysDict, m = m, k = k, maxTry = maxTry, initialHashSeed = initialHashSeed)
     orderAndMatch = oamf.find()
     if (m == 0) {
       m = oamf.m
     }
+    // This m should not be 0
+    hasher = new core.BloomierHasher(m = m, k = k, q = q, hashSeed = initialHashSeed)
 
     Q = util.conversion.Util.getBytesForBits(q)
     hashSeed = orderAndMatch.hashSeed
