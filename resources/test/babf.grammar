@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ufwb version="1.14">
+    <grammar name="BABF grammar" start="id:7" author="smcho" email="sm.cho@mac.com" fileextension="babf">
+        <description>Grammar for BABF files</description>
+        <structure name="BABF file" id="7" encoding="ISO_8859-1:1987" endian="big" signed="no">
+            <structure name="header" id="9" length="2" encoding="ISO_8859-1:1987" endian="big" signed="no"/>
+            <structure name="location bits" id="11" length="0" consists-of="id:7" order="variable"/>
+        </structure>
+    </grammar>
+</ufwb>
