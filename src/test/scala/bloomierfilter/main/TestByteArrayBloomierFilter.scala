@@ -82,4 +82,19 @@ class TestByteArrayBloomierFilter extends FunSuite with BeforeAndAfter{
 
     assert(valueString.decode(ba1).get == valueString.decode(ba2).get)
   }
+
+  test("Save bytearray into file and load it back") {
+    val Q = 8
+    val simpleMap = makeSimple(Q)
+    val bbf = new ByteArrayBloomierFilter(input = simpleMap.toMap, q = Q*8)
+    bbf.saveBytes("./resources/test/scalasimplemap.bin")
+
+    // load and check
+    val bbf2 = ByteArrayBloomierFilter("./resources/test/scalasimplemap.bin")
+
+    val ba1 = bbf2.getByteArray("string").get
+    val ba2 = bbf.getByteArray("string").get
+
+    assert(valueString.decode(ba1).get == valueString.decode(ba2).get)
+  }
 }

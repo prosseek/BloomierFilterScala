@@ -1,5 +1,8 @@
 package bloomierfilter.main
 
+import java.io.{BufferedInputStream, BufferedOutputStream, FileInputStream, FileOutputStream}
+import java.nio.file.{Files, Paths}
+
 import bloomierfilter.core._
 
 object ByteArrayBloomierFilter {
@@ -49,6 +52,19 @@ object ByteArrayBloomierFilter {
     babf.non_zero_n = table.calculate_non_zero_n
 
     babf
+  }
+
+  def apply(filePath:String):ByteArrayBloomierFilter = {
+    if (Files.exists(Paths.get(filePath))) {
+
+      val bis = new BufferedInputStream(new FileInputStream(filePath))
+      val byteArray = Stream.continually(bis.read).takeWhile(_ != -1).map(_.toByte).toArray
+
+      ByteArrayBloomierFilter(byteArray)
+    }
+    else {
+      throw new RuntimeException(s"No such file exists ${filePath}")
+    }
   }
 }
 
@@ -176,5 +192,13 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]],
     val serializedTable = table.serialize
 
     serializedHeader ++ serializedTable
+  }
+
+  def saveBytes(filePath:String) = {
+    val byteArray = serialize
+
+    val bos = new BufferedOutputStream(new FileOutputStream(filePath))
+    Stream.continually(bos.write(byteArray))
+    bos.close()
   }
 }
