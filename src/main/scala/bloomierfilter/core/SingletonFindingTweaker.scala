@@ -4,14 +4,14 @@ object SingletonFindingTweaker {
   val NONSINGLETON = -1
 }
 
-class SingletonFindingTweaker (val keysDict:Map[String, Any], hasher: BloomierHasher) {
+class SingletonFindingTweaker (val keys:Seq[String], hasher: BloomierHasher) {
   val nonSingletons = getNonSingletons()
 
   def getNonSingletons() = {
     val nonSingletons = scala.collection.mutable.Set[Int]()
     val hashesSeen = scala.collection.mutable.Set[Int]()
 
-    for (k <- keysDict.keys) {
+    for (k <- keys) {
       for (n <- hasher.getNeighborhood(k)) {
         if (hashesSeen.contains(n)) nonSingletons += n
         hashesSeen += n

@@ -10,19 +10,21 @@ object BloomierFilter {
 }
 
 class BloomierFilter(val input:Map[String, Any],
-                     val initialm:Int, val k:Int, val q:Int,
-                     val maxTry: Int = 5, val initialHashSeed:Int = 0, val caseSensitive: Boolean = true)
+                     val initialm:Int = 0, val k:Int = 3, val q:Int,
+                     val maxTry: Int = 5, val initialHashSeed:Int = 0, val caseSensitive: Boolean = false)
 {
-  val decoder = new conversion.Decoder
-  val encoder = new conversion.Encoder
-
+  var typeInstances: Map[String, chitchat.types.Base[_]] = util.types.Util.getSystemTypeInstances
+  val decoder = new conversion.Decoder(typeInstances)
+  val encoder = new conversion.Encoder(typeInstances)
 
   val bytearrayInput = encoder.encode(input)
   val bytearrayBloomierFilter = new ByteArrayBloomierFilter(bytearrayInput,
     initialm = initialm, k = k, q = q,
     maxTry = maxTry, initialHashSeed = initialHashSeed, caseSensitive = caseSensitive)
+
   val Q = bytearrayBloomierFilter.Q
-  var typeInstances: Map[String, chitchat.types.Base[_]] = util.types.Util.getSystemTypeInstances
+  val m = bytearrayBloomierFilter.m
+  val hashSeed = bytearrayBloomierFilter.hashSeed
 
   def loadUserTypeInstances(directory:String) = {
     typeInstances ++= util.types.Util.getUserTypeInstances(directory)
