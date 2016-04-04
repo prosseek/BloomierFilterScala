@@ -8,6 +8,11 @@ import org.scalatest.FunSuite
 class TestBloomierFilter extends FunSuite {
   test("simple when m is given") {
 
+    val inputAny = Map("string" -> "hello", "age" -> 10)
+    val Q = 8
+    val bf = new BloomierFilter(inputAny, q = Q*8)
+    println(bf.serialize.mkString(":"))
+
 //    val input: Map[String, chitchat.types.Base[_]]("string" -> "Hello", "age" -> 54)
 //
 //    val Q = 8

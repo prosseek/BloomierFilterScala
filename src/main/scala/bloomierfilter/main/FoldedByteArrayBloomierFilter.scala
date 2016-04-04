@@ -11,7 +11,7 @@ class FoldedByteArrayBloomierFilter(override val input:Map[String, Array[Byte]],
                                       maxTry = maxTry, initialHashSeed = initialHashSeed, caseSensitive = caseSensitive) {
 
 
-  override def getByteArray(keyInput:String) = {
-    super.getByteArray(keyInput)
-  }
+//  override def getByteArray(keyInput:String) = {
+//    super.getByteArray(keyInput)
+//  }
 }
