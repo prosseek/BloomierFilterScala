@@ -6,17 +6,43 @@ import scala.collection.mutable.{Map => MMap}
 object BloomierFilter {
   val USER_PROVIDED_TYPE_DIRECTORY = ""
   val typeInstances: Map[String, chitchat.types.Base[_]] = util.types.Util.getTypeInstances(USER_PROVIDED_TYPE_DIRECTORY)
-  val typeInference = new util.types.TypeInference()
-  val encoder = new Encoder(typeInstances)
+  val typeInference = new util.types.TypeInference(typeInstances)
+  val encoder = new Encoder(typeInference)
+  val decoder = new Decoder(typeInference)
 
-  def mapConversion(input:Map[String, Any]) : Map[String, Array[Byte]] = {
-    val res = MMap[String, Array[Byte]]()
-    val encoder = new Encoder(null)
-    input foreach {
-      case (key, value) => res(key) = encoder.encode(key, value)
+  /**
+    * encodes the Map[String, Any] into Map[String, Array[Byte]] with the
+    * given q.
+    *
+    * ==== Things to consider ====
+    *  1. q (Q*8) can be larger or smaller than each value type represents.
+    *  2. we need to fold or patch
+    *
+    * @param input
+    * @return converted map
+    */
+  def mapConversion(input:Map[String, Any], q:Int) : Map[String, Array[Byte]] = {
+    val encoder = new Encoder(typeInference)
+    val Q = util.conversion.Util.getBytesForBits(q)
+
+    // 1. get the width from Q for folding
+    val encodedByteArray = encoder.encode(input)
+
+    val result = MMap[String, Array[Byte]]()
+    // if each element is longer than Q, fold it.
+    // if shorter than Q, patch it with 0s.
+    encodedByteArray foreach {
+      case (key, byteArray) => {
+        val adjusted = adjustByteArray(key, byteArray, Q)
+        result ++= adjusted
+      }
     }
+    // 2. fold the map
+    result.toMap
+  }
 
-    res.toMap
+  def adjustByteArray(key:String, value:Array[Byte], Q:Int) : Map[String, Array[Byte]] = {
+    null
   }
 
   def apply(inputAny:Map[String, Any], initialm:Int = 0, k:Int = 3, q:Int,
@@ -30,7 +56,7 @@ object BloomierFilter {
 class BloomierFilter(val inputAny:Map[String, Any],
                      override val initialm:Int = 0, override val k:Int = 3, override val q:Int,
                      override val maxTry: Int = 5, override val initialHashSeed:Int = 0, override val caseSensitive: Boolean = false)
-  extends FoldedByteArrayBloomierFilter(input = BloomierFilter.mapConversion(inputAny), initialm = initialm, k = k, q = q,
+  extends ByteArrayBloomierFilter(input = BloomierFilter.mapConversion(inputAny, q), initialm = initialm, k = k, q = q,
                                         maxTry = maxTry, initialHashSeed = initialHashSeed, caseSensitive = caseSensitive)
 {
 
