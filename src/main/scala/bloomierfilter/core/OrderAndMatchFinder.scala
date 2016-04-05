@@ -11,10 +11,10 @@ object OrderAndMatchFinder {
   // used in find() method
   var MAXIMUM_M : Int = 255
   // used in find().findOrderAndMatch() method
-  var FORCE_DEPTH_COUNT_1 : Boolean = false
+  //var FORCE_DEPTH_COUNT_1 : Boolean = false
 
-  def apply(keys: Seq[String], initialM: Int, k: Int, maxTry: Int = 5, initialHashSeed: Int = 0) = {
-    val om = new OrderAndMatchFinder(keys = keys, initialM = initialM, k = k, maxTry = maxTry, initialHashSeed = initialHashSeed)
+  def apply(keys: Seq[String], initialM: Int, k: Int, maxTry: Int = 5, initialHashSeed: Int = 0, force_depth_count_1: Boolean = false) = {
+    val om = new OrderAndMatchFinder(keys = keys, initialM = initialM, k = k, maxTry = maxTry, initialHashSeed = initialHashSeed, force_depth_count_1 = force_depth_count_1)
     om.find()
     om
   }
@@ -28,7 +28,7 @@ object OrderAndMatchFinder {
   * @param maxTry
   * @param initialHashSeed
   */
-class OrderAndMatchFinder(val keys: Seq[String], val initialM: Int, val k: Int, val maxTry: Int = 5, val initialHashSeed: Int = 0) {
+class OrderAndMatchFinder(val keys: Seq[String], val initialM: Int, val k: Int, val maxTry: Int = 5, val initialHashSeed: Int = 0, val force_depth_count_1:Boolean = false) {
   //********** Public Properties **********
   /**
     * ==== Why var, not val ====
@@ -146,7 +146,7 @@ class OrderAndMatchFinder(val keys: Seq[String], val initialM: Int, val k: Int, 
 
       if (findMatch(remainKeys, h)) {
         // For CBF, depth count one should be enforced.
-        if (OrderAndMatchFinder.FORCE_DEPTH_COUNT_1) {
+        if (force_depth_count_1) {
           if (everyKeyIsSingleton) { // depthCount 1 means everything is a singleton
             this.hashSeed = newHashSeed
             return OrderAndMatch(hashSeed = newHashSeed, this.piList.toList, this.tauList.toList)

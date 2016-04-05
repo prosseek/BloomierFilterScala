@@ -1,6 +1,8 @@
 package bloomierfilter.main
 
-import bloomierfilter.conversion.{Decoder, Encoder}
+import chitchat.conversion.Encoder
+import bloomierfilter.conversion.Decoder
+
 import scala.collection.mutable.{Map => MMap}
 
 /**

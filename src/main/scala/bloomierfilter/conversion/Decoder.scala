@@ -8,14 +8,14 @@ import bloomierfilter.main.BloomierFilter
 import util.types.TypeInference
 import chitchat.types._
 
-class Decoder (val typeInference: TypeInference, val bf:BloomierFilter) {
+class Decoder (override val typeInference: TypeInference, val bf:BloomierFilter)
+  extends chitchat.conversion.Decoder(typeInference = typeInference) {
 
   def decode(key:JString) : Option[Any] = {
     val decodedFromKey = decodeFromKey(key)
     if (decodedFromKey.isDefined) {
       return decodedFromKey
     }
-
     null
   }
 
@@ -30,8 +30,7 @@ class Decoder (val typeInference: TypeInference, val bf:BloomierFilter) {
           val floatInstance = instance.asInstanceOf[Float]
           val size = floatInstance.sizeInBytes
           val ba = getFullByteArray(key, size)
-          val result = util.conversion.ByteArrayTool.byteArrayToFloat(ba)
-          Some(result)
+          Some(util.conversion.ByteArrayTool.byteArrayToFloat(ba))
         }
         case "string" => {
           val ba0 = bf.getByteArray(key).get

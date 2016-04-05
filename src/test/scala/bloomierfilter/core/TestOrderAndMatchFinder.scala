@@ -43,11 +43,10 @@ class TestOrderAndMatchFinder extends FunSuite {
   }
 
   test ("OrderAndMatchFinder with FORCE_DEPTH_COUNT_1") {
-    OrderAndMatchFinder.FORCE_DEPTH_COUNT_1 = true
     val keyMap = Seq[String]("abc", "def", "abd")
     val m = 20
     val k = 3
-    val o = OrderAndMatchFinder(keys = keyMap, initialM = m, k = k, maxTry = 100, initialHashSeed = 0)
+    val o = OrderAndMatchFinder(keys = keyMap, initialM = m, k = k, maxTry = 100, initialHashSeed = 0, force_depth_count_1 = true)
 
     assert(o.getNeighbors("abc") == List(1,6,11)) // 0th -> row 0 is selected
     assert(o.getNeighbors("abd") == List(0,1,4)) // 1st -> row 1 is selected
@@ -60,11 +59,10 @@ class TestOrderAndMatchFinder extends FunSuite {
   }
 
   test ("OrderAndMatchFinder with FORCE_DEPTH_COUNT_1 when m = 0") {
-    OrderAndMatchFinder.FORCE_DEPTH_COUNT_1 = true
     val keyMap = Seq[String]("abc", "def", "abd")
     val m = 0
     val k = 3
-    val o = OrderAndMatchFinder(keys = keyMap, initialM = m, k = k, maxTry = 100, initialHashSeed = 0)
+    val o = OrderAndMatchFinder(keys = keyMap, initialM = m, k = k, maxTry = 100, initialHashSeed = 0, force_depth_count_1 = true)
 
     // We need to track of the hashSeed to get the same results
     assert(o.m == 6)

@@ -85,7 +85,8 @@ object ByteArrayBloomierFilter {
   */
 class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]],
                               val initialm:Int = 0, val k:Int = 3, val q:Int,
-                              val maxTry: Int = 5, val initialHashSeed:Int = 0, val caseSensitive: Boolean = false) {
+                              val maxTry: Int = 5, val initialHashSeed:Int = 0, val caseSensitive: Boolean = false,
+                              val force_depth_count_1:Boolean = false) {
 
   // parameters that defines Bloomier Filter
   var Q:Int = _
@@ -104,7 +105,8 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]],
     //    1.1 we get `m` if m == 0 (user's request to calculate m)
     //    1.2 we get hashSeed that enables the ordering
     val keysDict = if (caseSensitive) input else ByteArrayBloomierFilter.createMapWithUppercaseKeys(input)
-    val oamf = new OrderAndMatchFinder(keys = keysDict.keys.toList, initialM = m, k = k, maxTry = maxTry, initialHashSeed = initialHashSeed)
+    val oamf = new OrderAndMatchFinder(keys = keysDict.keys.toList, initialM = m, k = k,
+      maxTry = maxTry, initialHashSeed = initialHashSeed, force_depth_count_1 = force_depth_count_1)
     val orderAndMatch = oamf.find()
     hashSeed = orderAndMatch.hashSeed
     if (m == 0) {
