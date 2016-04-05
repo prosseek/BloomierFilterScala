@@ -5,8 +5,8 @@ import scala.collection.mutable.{Map => MMap}
 import java.lang.{String => JString}
 import scala.{Byte => SByte}
 
-import util.conversion.ByteArrayTool
 import chitchat.types._
+import util.conversion.ByteArrayTool
 
 class TestByteArrayBloomierFilter extends FunSuite with BeforeAndAfter{
 
