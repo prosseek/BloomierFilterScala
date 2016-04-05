@@ -33,7 +33,7 @@ class Encoder (var typeInference: TypeInference) {
         case v:Int => util.conversion.ByteArrayTool.intToByteArray(v.asInstanceOf[Int])
         case v:Double => util.conversion.ByteArrayTool.floatToByteArray(v.asInstanceOf[Float])
         case v:JString => util.conversion.ByteArrayTool.stringToByteArray(v)
-        case _ => throw new RuntimeException(s"Error: type ")
+        case _ => throw new RuntimeException(s"Error: type ${input}")
       }
     }
 
