@@ -40,7 +40,7 @@ object Header {
 
 /**
   * Header class owns m/Q/hashSeed value and its byte array representation
-  * Header uses headerBits class to use its represestation and conversion.
+  * Header uses headerBits class to use its represestation and bloomierfilter.conversion.
   *
   */
 class Header {

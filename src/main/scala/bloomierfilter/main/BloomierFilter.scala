@@ -1,6 +1,6 @@
 package bloomierfilter.main
 
-import conversion.{Decoder, Encoder}
+import bloomierfilter.conversion.{Decoder, Encoder}
 import scala.collection.mutable.{Map => MMap}
 
 /**
@@ -39,7 +39,7 @@ object BloomierFilter {
     // if shorter than Q, patch it with 0s.
     encodedByteArray foreach {
       case (key, byteArray) => {
-        val adjusted = conversion.Util.zeroPatchByteArray(key, byteArray, Q)
+        val adjusted = bloomierfilter.conversion.Util.zeroPatchByteArray(key, byteArray, Q)
         result ++= adjusted
       }
     }

@@ -1,4 +1,4 @@
-package conversion
+package bloomierfilter.conversion
 
 import org.scalatest.FunSuite
 

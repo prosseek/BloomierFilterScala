@@ -18,10 +18,5 @@ class TestBloomierFilter extends FunSuite {
     println(bf.serialize.mkString(":"))
 
     println(bf.decoder.decode("string"))
-
-//    val input: Map[String, chitchat.types.Base[_]]("string" -> "Hello", "age" -> 54)
-//
-//    val Q = 8
-//    val bf = new BloomierFilter(input, q = 8*Q)
   }
 }

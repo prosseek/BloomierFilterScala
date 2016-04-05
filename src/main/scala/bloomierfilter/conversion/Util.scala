@@ -1,4 +1,4 @@
-package conversion
+package bloomierfilter.conversion
 
 import scala.collection.mutable.{Map => MMap}
 object Util {

@@ -1,4 +1,4 @@
-package conversion
+package bloomierfilter.conversion
 
 import util.types.TypeInference
 
