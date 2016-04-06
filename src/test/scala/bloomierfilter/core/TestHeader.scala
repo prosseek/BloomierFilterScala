@@ -2,9 +2,6 @@ package bloomierfilter.core
 
 import org.scalatest.FunSuite
 
-/**
-  * Created by smcho on 4/2/16.
-  */
 class TestHeader extends FunSuite {
 
   test ("Header simple") {

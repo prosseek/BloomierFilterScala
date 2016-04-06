@@ -13,7 +13,7 @@ class TestBloomierHasher extends FunSuite {
 
   test ("getM returns q/8 + 1 random data under 255") {
     val b = new BloomierHasher() // default q = 4 bytes
-    println(b.getM("Hello, world"))
+    assert(b.getM("Hello, world") == List(48, 80, 105, 245))
   }
 
   test ("getM should return the same value with the same input") {
