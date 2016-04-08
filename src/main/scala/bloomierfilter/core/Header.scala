@@ -70,7 +70,7 @@ class Header {
     if (!map.keySet.contains(Q))
       throw new RuntimeException(s"Only 1/2/4/8 is allowed in Q(${Q})")
     val qq = map(Q)
-    headerbits.encode(Seq[Int](m, qq, hashValue))
+    headerbits.encode(Seq[Int](m, qq, hashValue)).get
   }
 
   def size = headerbits.sizeInBytes

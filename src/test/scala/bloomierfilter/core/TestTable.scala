@@ -21,10 +21,10 @@ class TestTable extends FunSuite {
 
     var simpleMap = MMap[JString, Array[SByte]]()
 
-    var byteArray = valueString.encode("Hello")
+    var byteArray = valueString.encode("Hello").get
     simpleMap("string") = ByteArrayTool.zeroPatch(byteArray, Q)
 
-    byteArray = valueAge.encode(43)
+    byteArray = valueAge.encode(43).get
     simpleMap("age") = ByteArrayTool.zeroPatch(byteArray, Q)
 
     simpleMap

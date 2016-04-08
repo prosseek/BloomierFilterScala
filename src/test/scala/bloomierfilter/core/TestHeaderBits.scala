@@ -7,7 +7,7 @@ class TestHeaderBits extends FunSuite {
   test ("HeaderBits simple") {
 
     val hb = new HeaderBits
-    val res = hb.encode(Seq[Int](5, 3, 10))
+    val res = hb.encode(Seq[Int](5, 3, 10)).get
 
     /*
        00101011:00000101
