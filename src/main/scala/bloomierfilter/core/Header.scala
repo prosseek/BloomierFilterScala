@@ -13,27 +13,29 @@ class HeaderBits extends Encoding(
   name = "headerbits",
   Array[Range](
     new Range(name = "m",           size = 8, min = 0, max = 255, signed = false),
-    new Range(name = "Q",           size = 2, min =   0, max = 3, signed = false),
-    new Range(name = "hashValue",   size = 6, min =   0, max = 63, signed = false)))
+    new Range(name = "Q",           size = 2, min = 0, max = 3, signed = false),
+    new Range(name = "hashSeed",    size = 5, min = 0, max = 31, signed = false),
+    new Range(name = "complete",    size = 1, min = 0, max = 1, signed = false)))
 
 /**
   * Created by smcho on 4/1/16.
   */
 
 object Header {
-  def apply(m:Int, Q:Int, hashSeed:Int) = {
-    val h = new Header
-    val byteArray = h.serialize(m, Q, hashSeed)
+  def apply(m:Int, Q:Int, hashSeed:Int, complete:Int) = {
+    val h = new Header(m = m, Q = Q, hashSeed = hashSeed, complete = complete)
+    val byteArray = h.serialize()
     h.byteArray = byteArray
     h
   }
 
   def apply(byteArray:Array[Byte]) = {
-    val h = new Header
-    val (m, qq, hashSeed) = h.decode(byteArray)
+    val h = new Header // it will be overwritten
+    val (m, qq, hashSeed, complete) = h.decode(byteArray)
     h.m = m
     h.Q = qq
     h.hashSeed = hashSeed
+    h.complete = complete
     h
   }
 }
@@ -43,14 +45,11 @@ object Header {
   * Header uses headerBits class to use its represestation and bloomierfilter.conversion.
   *
   */
-class Header {
+class Header(var m:Int = 0, var Q:Int = 0, var hashSeed:Int = 0, var complete:Int = 0) {
 
   val headerbits = new HeaderBits
 
   var byteArray: Array[Byte] = _
-  var m: Int = _
-  var Q: Int = _
-  var hashSeed: Int = _
   val k: Int = 3
 
   def decode(bytearray: Array[Byte]) = {
@@ -61,16 +60,17 @@ class Header {
       m = temp(0)
       Q = 1 << temp(1)
       hashSeed = temp(2)
+      complete = temp(3)
     }
-    (m, Q, hashSeed)
+    (m, Q, hashSeed, complete)
   }
 
-  def serialize(m:Int, Q:Int, hashValue:Int) = {
+  def serialize(m:Int = m, Q:Int = Q, hashSeed:Int = hashSeed, complete:Int = complete) = {
     val map = Map[Int, Int](1 -> 0, 2 -> 1, 4 -> 2, 8 -> 3)
     if (!map.keySet.contains(Q))
       throw new RuntimeException(s"Only 1/2/4/8 is allowed in Q(${Q})")
     val qq = map(Q)
-    headerbits.encode(Seq[Int](m, qq, hashValue)).get
+    headerbits.encode(Seq[Int](m, qq, hashSeed, complete)).get
   }
 
   def size = headerbits.sizeInBytes

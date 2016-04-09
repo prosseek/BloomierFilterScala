@@ -183,7 +183,7 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]],
 
   def serialize = {
     // you need header for serialization
-    header = Header(m = m, Q = Q, hashSeed = hashSeed)
+    header = Header(m = m, Q = Q, hashSeed = hashSeed, complete = if (force_depth_count_1) 1 else 0)
 
     if (k != 3) {
       throw new RuntimeException(s"Only k == 3 is allowed in serialization process, you provided ${k}")
@@ -191,7 +191,7 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]],
     if (!Set(1,2,4,8).contains(Q)) {
       throw new RuntimeException(s"Only 1/2/4/8 is allowed in serialization process, you provided ${Q}")
     }
-    val serializedHeader = header.serialize(m = m, Q = Q, hashValue = hashSeed)
+    val serializedHeader = header.serialize() // require () to use default parameters
     val serializedTable = table.serialize
 
     serializedHeader ++ serializedTable

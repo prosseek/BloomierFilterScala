@@ -5,15 +5,16 @@ import org.scalatest.FunSuite
 class TestHeader extends FunSuite {
 
   test ("Header simple") {
-    val res = Array[Byte](43, 5)
+    val res = Array[Byte](-85, 5) // -128 (high bit 1) + 43 => 85
     val h = Header(res)
     h.byteArray = res
 
     /*
-       00101011:00000101
+       10101011:00000101
                 -------- (5)
              --  (3)
-       ------ (10)
+        ----- (10)
+       -      (0)
 
       Makes : (5,3,10)
      */
@@ -21,24 +22,27 @@ class TestHeader extends FunSuite {
     assert(h.k == 3)
     assert(h.Q == 8)
     assert(h.hashSeed == 10)
+    assert(h.complete == 1)
   }
 
   test("Header decode") {
     val h = new Header
-    val res = Array[Byte](43, 5)
-    val (m, qq, hashSeed) = h.decode(res)
+    val res = Array[Byte](-85, 5)
+    val (m, qq, hashSeed, complete) = h.decode(res)
     assert(m == 5)
     assert(qq == 8)
     assert(hashSeed == 10)
+    assert(complete == 1)
   }
 
   test("Head serialize") {
     val h:Header = new Header
-    val res: Array[Byte] = h.serialize(m = 11, Q = 8, hashValue = 16)
+    val res: Array[Byte] = h.serialize(m = 11, Q = 8, hashSeed = 16, complete = 0)
     assert(res.mkString(":") == "67:11") // 1000011:(11 in decimal) => 16*4 + 3 (8 is stored in3) = 67
-    val (m, qq, hashValue) = h.decode(res)
+    val (m, qq, hashSeed, complete) = h.decode(res)
     assert(m == 11)
     assert(qq == 8)
-    assert(hashValue == 16)
+    assert(hashSeed == 16)
+    assert(complete == 0)
   }
 }
