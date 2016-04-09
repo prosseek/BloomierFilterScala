@@ -3,7 +3,7 @@ package bloomierfilter.main
 import java.lang.{String => JString}
 
 import chitchat.typetool.TypeInference
-
+import chitchat.types.{Encoding, Range, String, Float}
 import scala.{Byte => SByte, Float => SFloat, Int => SInt}
 import scala.collection.mutable.{Map => MMap}
 
@@ -16,7 +16,7 @@ import scala.collection.mutable.{Map => MMap}
   */
 object BloomierFilter {
 
-  def apply(inputAny:Map[String, Any],
+  def apply(inputAny:Map[JString, Any],
             typeInference: TypeInference,
             initialm:Int = 0, k:Int = 3, q:Int,
             force_depth_count_1:Boolean = false,
@@ -43,7 +43,7 @@ object BloomierFilter {
     *
     * @return converted map
     */
-  def mapConversion(inputAny:Map[JString, Any], q:Int, typeInference: TypeInference) : Map[String, Array[Byte]] = {
+  def mapConversion(inputAny:Map[JString, Any], q:Int, typeInference: TypeInference) : Map[JString, Array[SByte]] = {
     val Q = util.conversion.Util.getBytesForBits(q)
 
     //    val result = MMap[JString, Array[Byte]]()
@@ -60,7 +60,7 @@ object BloomierFilter {
     //    }
     //    result.toMap
 
-    (Map[JString, Array[Byte]]() /: inputAny) { (acc, value) => {
+    (Map[JString, Array[SByte]]() /: inputAny) { (acc, value) => {
         val label = value._1
         val any = value._2
         val byteArray = typeInference.encode(label, any)
@@ -73,7 +73,7 @@ object BloomierFilter {
   }
 }
 
-class BloomierFilter(val inputAny:Map[String, Any],
+class BloomierFilter(val inputAny:Map[JString, Any],
                      val typeInference: TypeInference,
                      override val initialm:Int = 0, override val k:Int = 3, override val q:Int,
                      override val force_depth_count_1:Boolean = false,
@@ -106,11 +106,16 @@ class BloomierFilter(val inputAny:Map[String, Any],
     *   return => "ab" + "xy" + "kw"
     * }}}
     *
-    * @param size
+    * @param sizeInBytes
     * @return
     */
-  def getFullByteArray(key:JString, size:Int) : Array[SByte] = {
-    val (count, remainder) = (size / Q, size % Q)
+  def getFullByteArray(label:JString, sizeInBytes:Int = 0) : Array[SByte] = {
+    var totalSize = sizeInBytes
+    if (sizeInBytes == 0) { // This is the string, so we need to figure out the size
+      val row = getByteArray(label).get
+      totalSize = row(0)
+    }
+    val (count, remainder) = (totalSize / Q, totalSize % Q)
     val totalCount =
       if (count == 0) 1 // get only one time if Q > size
       else {
@@ -126,10 +131,41 @@ class BloomierFilter(val inputAny:Map[String, Any],
 
     var byteArray = Array[SByte]()
     for (index <- 0 until totalCount) {
-      val numberedKey:JString = if (index == 0) key else s"${key}${index}"
+      val numberedKey:JString = if (index == 0) label else s"${label}${index}"
       byteArray ++= getByteArray(numberedKey).get
     }
 
     byteArray
+  }
+
+  def get(label:JString) : Option[Any] = {
+    val t = typeInference.get(label)
+    if (t.isEmpty) None
+    else {
+      // todo: Duplicated code
+      val tp = t.get
+      tp match {
+        case v:Range => {
+          val sizeInBytes = v.sizeInBytes
+          val ba = getFullByteArray(label = label, sizeInBytes = sizeInBytes)
+          v.decode(ba)
+        }
+        case v:Encoding => {
+          val sizeInBytes = v.sizeInBytes
+          val ba = getFullByteArray(label = label, sizeInBytes = sizeInBytes)
+          v.decode(ba)
+        }
+        case v:Float => {
+          val sizeInBytes = v.sizeInBytes
+          val ba = getFullByteArray(label = label, sizeInBytes = sizeInBytes)
+          v.decode(ba)
+        }
+        case v:String => {
+          val ba = getFullByteArray(label = label, sizeInBytes = 0) // string case
+          v.decode(ba)
+        }
+        case _  => throw new RuntimeException("No supported type")
+      }
+    }
   }
 }
