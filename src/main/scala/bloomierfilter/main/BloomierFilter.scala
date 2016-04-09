@@ -142,30 +142,10 @@ class BloomierFilter(val inputAny:Map[JString, Any],
     val t = typeInference.get(label)
     if (t.isEmpty) None
     else {
-      // todo: Duplicated code
-      val tp = t.get
-      tp match {
-        case v:Range => {
-          val sizeInBytes = v.sizeInBytes
-          val ba = getFullByteArray(label = label, sizeInBytes = sizeInBytes)
-          v.decode(ba)
-        }
-        case v:Encoding => {
-          val sizeInBytes = v.sizeInBytes
-          val ba = getFullByteArray(label = label, sizeInBytes = sizeInBytes)
-          v.decode(ba)
-        }
-        case v:Float => {
-          val sizeInBytes = v.sizeInBytes
-          val ba = getFullByteArray(label = label, sizeInBytes = sizeInBytes)
-          v.decode(ba)
-        }
-        case v:String => {
-          val ba = getFullByteArray(label = label, sizeInBytes = 0) // string case
-          v.decode(ba)
-        }
-        case _  => throw new RuntimeException("No supported type")
-      }
+      val v = t.get
+      val sizeInBytes = v.sizeInBytes
+      val ba = getFullByteArray(label, sizeInBytes)
+      v.decode(ba)
     }
   }
 }
