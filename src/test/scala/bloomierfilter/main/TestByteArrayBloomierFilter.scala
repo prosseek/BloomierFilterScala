@@ -87,7 +87,7 @@ class TestByteArrayBloomierFilter extends FunSuite with BeforeAndAfter{
     val Q = 8
     val simpleMap = makeSimple(Q)
     val bbf = new ByteArrayBloomierFilter(input = simpleMap.toMap, q = Q*8)
-    bbf.saveBytes("./resources/test/scalasimplemap.babf")
+    bbf.save("./resources/test/scalasimplemap.babf")
 
     // load and check
     val bbf2 = ByteArrayBloomierFilter("./resources/test/scalasimplemap.babf")

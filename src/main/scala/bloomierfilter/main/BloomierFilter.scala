@@ -1,9 +1,12 @@
 package bloomierfilter.main
 
+import java.io.File
 import java.lang.{String => JString}
 
+import bloomierfilter.core.{BloomierHasher, Header, Table}
 import chitchat.typetool.TypeInference
-import chitchat.types.{Encoding, Range, String, Float}
+import chitchat.types.{Encoding, Float, Range, String}
+
 import scala.{Byte => SByte, Float => SFloat, Int => SInt}
 import scala.collection.mutable.{Map => MMap}
 
@@ -15,6 +18,23 @@ import scala.collection.mutable.{Map => MMap}
   *  3. So, the encoder in BF uses the encoder int this object, when decoder is a method in the BF.
   */
 object BloomierFilter {
+
+  def apply(typeInference: TypeInference, byteArray:Array[SByte]) = {
+    val babf = ByteArrayBloomierFilter.apply(byteArray)
+    val bf = new BloomierFilter(typeInference = typeInference)
+    bf.byteArrayBloomierFilter = babf
+    copyParameters(from = babf, to = bf)
+  }
+
+  def apply(typeInference: TypeInference, filePath:JString) = {
+    if (new File(filePath).exists()) {
+      val bf = new BloomierFilter(typeInference = typeInference)
+      bf.load(filePath)
+      bf
+    } else {
+      throw new RuntimeException(s"No file ${filePath} exists.")
+    }
+  }
 
   def apply(inputAny:Map[JString, Any],
             typeInference: TypeInference,
@@ -71,19 +91,47 @@ object BloomierFilter {
       }
     }
   }
+  def copyParameters(from: ByteArrayBloomierFilter, to:BloomierFilter) = {
+    to.Q = from.Q
+    to.hashSeed = from.hashSeed
+    to.n = from.n
+    to.non_zero_n = from.non_zero_n
+    to.table = from.table
+    to.header = from.header
+    to.hasher = from.hasher
+  }
 }
 
-class BloomierFilter(val inputAny:Map[JString, Any],
-                     val typeInference: TypeInference,
-                     override val initialm:Int = 0, override val k:Int = 3, override val q:Int,
-                     override val force_depth_count_1:Boolean = false,
-                     override val maxTry: Int = 5, override val initialHashSeed:Int = 0, override val caseSensitive: Boolean = false)
-  extends ByteArrayBloomierFilter(input = BloomierFilter.mapConversion(inputAny = inputAny,
-                                                                       typeInference = typeInference, q = q),
-                                  initialm = initialm, k = k, q = q,
-                                  force_depth_count_1 = force_depth_count_1,
-                                  maxTry = maxTry, initialHashSeed = initialHashSeed, caseSensitive = caseSensitive)
+class BloomierFilter(var inputAny:Map[JString, Any] = null,
+                     var typeInference: TypeInference,
+                     var initialm:Int = 0, var k:Int = 3, var q:Int = 4,
+                     var force_depth_count_1:Boolean = false,
+                     var maxTry: Int = 5, var initialHashSeed:Int = 0, val caseSensitive: Boolean = false)
 {
+  var Q:Int = _
+  var hashSeed:Int = _
+  var n:Int = _
+  var m = initialm // initially m is set to the given value, it will be updated when m = 0
+  var non_zero_n : Int = _
+
+  // objects that defines Bloomier filter
+  var table: Table = _
+  var header: Header = _
+  var hasher: BloomierHasher = _
+
+  var byteArrayBloomierFilter : ByteArrayBloomierFilter = _
+
+  var inputByteArray: Map[JString, Array[SByte]] = null
+  if (inputAny != null) {
+    inputByteArray = BloomierFilter.mapConversion(inputAny = inputAny, typeInference = typeInference, q = q)
+  }
+  byteArrayBloomierFilter = new ByteArrayBloomierFilter(input = inputByteArray,
+      initialm = initialm, k = k, q = q,
+      force_depth_count_1 = force_depth_count_1,
+      maxTry = maxTry, initialHashSeed = initialHashSeed, caseSensitive = caseSensitive)
+
+  BloomierFilter.copyParameters(from = byteArrayBloomierFilter, to = this)
+
   /**
     * Retrieve the partial bytearrays (size Q) up to given size bytes
     *
@@ -112,7 +160,7 @@ class BloomierFilter(val inputAny:Map[JString, Any],
   def getFullByteArray(label:JString, sizeInBytes:Int = 0) : Array[SByte] = {
     var totalSize = sizeInBytes
     if (sizeInBytes == 0) { // This is the string, so we need to figure out the size
-      val row = getByteArray(label).get
+      val row = byteArrayBloomierFilter.getByteArray(label).get
       totalSize = row(0)
     }
     val (count, remainder) = (totalSize / Q, totalSize % Q)
@@ -132,7 +180,7 @@ class BloomierFilter(val inputAny:Map[JString, Any],
     var byteArray = Array[SByte]()
     for (index <- 0 until totalCount) {
       val numberedKey:JString = if (index == 0) label else s"${label}${index}"
-      byteArray ++= getByteArray(numberedKey).get
+      byteArray ++= byteArrayBloomierFilter.getByteArray(numberedKey).get
     }
 
     byteArray
@@ -147,5 +195,20 @@ class BloomierFilter(val inputAny:Map[JString, Any],
       val ba = getFullByteArray(label, sizeInBytes)
       v.decode(ba)
     }
+  }
+
+  def serialize = {
+    byteArrayBloomierFilter.serialize
+  }
+
+  def save(filePath:JString, ba:Array[SByte] = null) = {
+    var byteArray = ba
+    if (byteArray == null)
+      byteArray = serialize
+    byteArrayBloomierFilter.save(filePath, byteArray)
+  }
+  def load(filePath:JString) = {
+    byteArrayBloomierFilter.load(filePath)
+    BloomierFilter.copyParameters(from = byteArrayBloomierFilter, to = this)
   }
 }

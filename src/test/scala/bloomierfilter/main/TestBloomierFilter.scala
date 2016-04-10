@@ -17,4 +17,20 @@ class TestBloomierFilter extends FunSuite {
     assert(bf.get("string").get == "James")
     assert(bf.get("age").get == 10)
   }
+
+  test("save") {
+    val ti = TypeInference()
+    val m = Map[JString, Any]("age" -> 10, "string" -> "James")
+    val bf = new BloomierFilter(inputAny = m, q = 8*2, typeInference = ti)
+    bf.save("./src/test/resources/test.bin")
+  }
+
+  test ("load binary") {
+    val ti = TypeInference()
+    val ba = null
+    val bf = BloomierFilter(typeInference = ti, filePath = "./src/test/resources/test.bin")
+    assert(bf.get("string").get == "James")
+    assert(bf.get("age").get == 10)
+    assert(bf.get("What").isEmpty)
+  }
 }

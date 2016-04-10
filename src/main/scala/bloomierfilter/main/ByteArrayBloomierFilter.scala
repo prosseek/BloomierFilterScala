@@ -18,11 +18,11 @@ object ByteArrayBloomierFilter {
     collection.immutable.Map(map.toSeq: _*)
   }
 
-  private def analyzeSerialized(byteArray:Array[Byte]) = {
+  def analyzeSerialized(byteArray:Array[Byte]) = {
 
     val header = Header(byteArray.slice(0, HEADER_SIZE))
 
-    val m = header.m
+    val m = header.m * 4 // header.m is shifted by two bits
     val k = header.k
     val Q = header.Q
     val hashSeed = header.hashSeed
@@ -39,32 +39,15 @@ object ByteArrayBloomierFilter {
   }
 
   def apply(byteArray: Array[Byte]):ByteArrayBloomierFilter = {
-    val (m, k, q, qq, hashSeed, table, hasher, n) = analyzeSerialized(byteArray)
-    val babf = new ByteArrayBloomierFilter(null, initialm = m, k = k, q = q)
-
-    babf.Q = qq
-    babf.hashSeed = hashSeed
-    babf.n = n
-
-    babf.table = table
-    babf.hasher = hasher
-
-    babf.non_zero_n = table.calculate_non_zero_n
-
+    val babf = new ByteArrayBloomierFilter
+    babf.loadByteArray(byteArray)
     babf
   }
 
   def apply(filePath:String):ByteArrayBloomierFilter = {
-    if (Files.exists(Paths.get(filePath))) {
-
-      val bis = new BufferedInputStream(new FileInputStream(filePath))
-      val byteArray = Stream.continually(bis.read).takeWhile(_ != -1).map(_.toByte).toArray
-
-      ByteArrayBloomierFilter(byteArray)
-    }
-    else {
-      throw new RuntimeException(s"No such file exists ${filePath}")
-    }
+    val babf = new ByteArrayBloomierFilter
+    babf.load(filePath)
+    babf
   }
 }
 
@@ -83,8 +66,8 @@ object ByteArrayBloomierFilter {
   * @param initialHashSeed
   * @param caseSensitive
   */
-class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]],
-                              val initialm:Int = 0, val k:Int = 3, val q:Int,
+class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]] = null,
+                              val initialm:Int = 0, val k:Int = 3, val q:Int = 4,
                               val maxTry: Int = 5, val initialHashSeed:Int = 0, val caseSensitive: Boolean = false,
                               val force_depth_count_1:Boolean = false) {
 
@@ -182,8 +165,12 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]],
   def serialized_size = header.size + table.size
 
   def serialize = {
+    // The m is right shift by 2 (divide by 4)
+    val (div, rem) = (m / 4, m % 4)
+    val m2 = if (rem == 0) div else (div + 1)
+
     // you need header for serialization
-    header = Header(m = m, Q = Q, hashSeed = hashSeed, complete = if (force_depth_count_1) 1 else 0)
+    header = Header(m = m2, Q = Q, hashSeed = hashSeed, complete = if (force_depth_count_1) 1 else 0)
 
     if (k != 3) {
       throw new RuntimeException(s"Only k == 3 is allowed in serialization process, you provided ${k}")
@@ -197,11 +184,37 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]],
     serializedHeader ++ serializedTable
   }
 
-  def saveBytes(filePath:String) = {
-    val byteArray = serialize
+  def save(filePath:String, byteArray:Array[Byte] = null) = {
+    var ba = byteArray
+    if (byteArray == null)
+      ba = serialize
 
     val bos = new BufferedOutputStream(new FileOutputStream(filePath))
-    Stream.continually(bos.write(byteArray))
+    Stream.continually(bos.write(ba))
     bos.close()
+  }
+
+  def load(filePath:String) = {
+    if (Files.exists(Paths.get(filePath))) {
+      val bis = new BufferedInputStream(new FileInputStream(filePath))
+      val byteArray = Stream.continually(bis.read).takeWhile(_ != -1).map(_.toByte).toArray
+      loadByteArray(byteArray)
+    }
+    else {
+      throw new RuntimeException(s"No such file exists ${filePath}")
+    }
+  }
+
+  def loadByteArray(byteArray:Array[Byte]) = {
+    val (m, k, q, qq, hashSeed, table, hasher, n) = ByteArrayBloomierFilter.analyzeSerialized(byteArray)
+
+    this.Q = qq
+    this.hashSeed = hashSeed
+    this.n = n
+
+    this.table = table
+    this.hasher = hasher
+
+    this.non_zero_n = table.calculate_non_zero_n
   }
 }
