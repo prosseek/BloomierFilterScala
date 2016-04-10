@@ -222,7 +222,7 @@ class OrderAndMatchFinder(val keys: Seq[String], val initialM: Int, val k: Int, 
             return res
           }
           else {
-            tryM = make_m_multiply_by_for((tryM*2.0 + 0.5).toInt)
+            tryM = make_m_multiply_by_for((tryM * 1.5 + 0.5).toInt)
           }
         }
       }

@@ -105,7 +105,7 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]] = null,
     }
 
     // 2. make the hasher with updated m and hashSeed
-    hasher = new BloomierHasher(m = m, k = k, q = q, hashSeed = initialHashSeed)
+    hasher = new BloomierHasher(m = m, k = k, q = q, hashSeed = hashSeed)
 
     // 3. set other parameters
     Q = util.conversion.Util.getBytesForBits(q)
