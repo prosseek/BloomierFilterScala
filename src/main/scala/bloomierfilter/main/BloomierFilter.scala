@@ -21,9 +21,8 @@ object BloomierFilter {
 
   def apply(typeInference: TypeInference, byteArray:Array[SByte]) = {
     val babf = ByteArrayBloomierFilter.apply(byteArray)
-    val bf = new BloomierFilter(typeInference = typeInference)
+    val bf = new BloomierFilter(typeInference = typeInference, q = babf.q)
     bf.byteArrayBloomierFilter = babf
-    copyParameters(from = babf, to = bf)
   }
 
   def apply(typeInference: TypeInference, filePath:JString) = {
@@ -94,12 +93,6 @@ object BloomierFilter {
   }
   def copyParameters(from: ByteArrayBloomierFilter, to:BloomierFilter) = {
     to.Q = from.Q
-    to.hashSeed = from.hashSeed
-    to.n = from.n
-    to.non_zero_n = from.non_zero_n
-    to.table = from.table
-    to.header = from.header
-    to.hasher = from.hasher
   }
 }
 
@@ -110,16 +103,9 @@ class BloomierFilter(var inputAny:Map[JString, Any] = null,
                      val force_m_multiple_by_four:Boolean = false,
                      var maxTry: Int = 5, var initialHashSeed:Int = 0, val caseSensitive: Boolean = false)
 {
-  var Q:Int = _
-  var hashSeed:Int = _
-  var n:Int = _
-  var m = initialm // initially m is set to the given value, it will be updated when m = 0
-  var non_zero_n : Int = _
-
-  // objects that defines Bloomier filter
-  var table: Table = _
-  var header: Header = _
-  var hasher: BloomierHasher = _
+  // we need Q in getFullByteArray for folded operation
+  // when we make bf from serialized data, we need to recover Q
+  var Q:Int = util.conversion.Util.getBytesForBits(q)
 
   var byteArrayBloomierFilter : ByteArrayBloomierFilter = _
 
@@ -132,8 +118,6 @@ class BloomierFilter(var inputAny:Map[JString, Any] = null,
       force_depth_count_1 = force_depth_count_1,
       force_m_multiple_by_four = force_m_multiple_by_four,
       maxTry = maxTry, initialHashSeed = initialHashSeed, caseSensitive = caseSensitive)
-
-  BloomierFilter.copyParameters(from = byteArrayBloomierFilter, to = this)
 
   /**
     * Retrieve the partial bytearrays (size Q) up to given size bytes
@@ -212,6 +196,7 @@ class BloomierFilter(var inputAny:Map[JString, Any] = null,
   }
   def load(filePath:JString) = {
     byteArrayBloomierFilter.load(filePath)
-    BloomierFilter.copyParameters(from = byteArrayBloomierFilter, to = this)
+
+    this.Q = byteArrayBloomierFilter.Q
   }
 }
