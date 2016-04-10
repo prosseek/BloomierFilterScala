@@ -9,10 +9,10 @@ object ByteArrayBloomierFilter {
   val HEADER_SIZE = 2
   val UNKNOWN = -1
 
-  private def createMapWithUppercaseKeys(keysDictInput:Map[String, Array[Byte]]) = {
+  private def createMapWithLowercaseKeys(keysDictInput:Map[String, Array[Byte]]) = {
     val map = collection.mutable.Map[String, Array[Byte]]()
     for ((key,value) <- keysDictInput) {
-      map(key.toUpperCase()) = value
+      map(key.toLowerCase()) = value
     }
 
     collection.immutable.Map(map.toSeq: _*)
@@ -22,11 +22,12 @@ object ByteArrayBloomierFilter {
 
     val header = Header(byteArray.slice(0, HEADER_SIZE))
 
-    val m = header.m * 4 // header.m is shifted by two bits
+    val m = header.m // header.m is shifted by two bits
     val k = header.k
     val Q = header.Q
     val hashSeed = header.hashSeed
     val q = Q * 8
+    val complete = header.complete
 
     val serializedTable = byteArray.slice(HEADER_SIZE, byteArray.size)
     val table = new Table(m, Q)
@@ -69,13 +70,18 @@ object ByteArrayBloomierFilter {
 class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]] = null,
                               val initialm:Int = 0, val k:Int = 3, val q:Int = 4,
                               val maxTry: Int = 5, val initialHashSeed:Int = 0, val caseSensitive: Boolean = false,
-                              val force_depth_count_1:Boolean = false) {
+                              val force_depth_count_1:Boolean = false,
+                              val force_m_multiple_by_four:Boolean = false) {
 
   // parameters that defines Bloomier Filter
   var Q:Int = _
   var hashSeed:Int = _
   var n:Int = _
   var m = initialm // initially m is set to the given value, it will be updated when m = 0
+
+  if (force_m_multiple_by_four && (initialm != 0 && initialm % 4 != 0))
+    throw new RuntimeException(s"You set force_m_multiply_by_four, but your initialm is not multiply by four ${initialm}")
+
   var non_zero_n : Int = _
 
   // objects that defines Bloomier filter
@@ -87,13 +93,14 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]] = null,
     // 1. find the ordering of the keys
     //    1.1 we get `m` if m == 0 (user's request to calculate m)
     //    1.2 we get hashSeed that enables the ordering
-    val keysDict = if (caseSensitive) input else ByteArrayBloomierFilter.createMapWithUppercaseKeys(input)
+    val keysDict = if (caseSensitive) input else ByteArrayBloomierFilter.createMapWithLowercaseKeys(input)
     val oamf = new OrderAndMatchFinder(keys = keysDict.keys.toList, initialM = m, k = k,
-      maxTry = maxTry, initialHashSeed = initialHashSeed, force_depth_count_1 = force_depth_count_1)
+      maxTry = maxTry, initialHashSeed = initialHashSeed,
+      force_depth_count_1 = force_depth_count_1,
+      force_m_multiple_by_four = force_m_multiple_by_four)
     val orderAndMatch = oamf.find()
     hashSeed = orderAndMatch.hashSeed
     if (m == 0) {
-      // m should be updated
       m = oamf.m
     }
 
@@ -143,7 +150,7 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]] = null,
     * @return
     */
   def getByteArray(keyInput: String) : Option[Array[Byte]] = {
-    val key = if (caseSensitive) keyInput else keyInput.toUpperCase()
+    val key = if (caseSensitive) keyInput else keyInput.toLowerCase()
     val neighbors = hasher.getNeighborhood(key, hashSeed)
     val mask = hasher.getM(key).toArray.map(_.toByte)
     var valueToRestore = mask
@@ -165,12 +172,8 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]] = null,
   def serialized_size = header.size + table.size
 
   def serialize = {
-    // The m is right shift by 2 (divide by 4)
-    val (div, rem) = (m / 4, m % 4)
-    val m2 = if (rem == 0) div else (div + 1)
-
     // you need header for serialization
-    header = Header(m = m2, Q = Q, hashSeed = hashSeed, complete = if (force_depth_count_1) 1 else 0)
+    header = Header(m = m, Q = Q, hashSeed = hashSeed, complete = if (force_depth_count_1) 1 else 0)
 
     if (k != 3) {
       throw new RuntimeException(s"Only k == 3 is allowed in serialization process, you provided ${k}")
@@ -178,7 +181,7 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]] = null,
     if (!Set(1,2,4,8).contains(Q)) {
       throw new RuntimeException(s"Only 1/2/4/8 is allowed in serialization process, you provided ${Q}")
     }
-    val serializedHeader = header.serialize() // require () to use default parameters
+    val serializedHeader = header.encode() // require () to use default parameters
     val serializedTable = table.serialize
 
     serializedHeader ++ serializedTable

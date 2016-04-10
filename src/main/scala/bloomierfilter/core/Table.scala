@@ -75,7 +75,9 @@ class Table(val m:Int, val Q:Int) {
   }
 
   def serialize : Array[Byte] = {
-    val locationBitsByteArray = util.conversion.ByteArrayTool.bitSetToByteArray(BitSet(table.keySet.toSeq:_*))
+    var locationBitsByteArray = util.conversion.ByteArrayTool.bitSetToByteArray(BitSet(table.keySet.toSeq:_*))
+    // when locationBitsByteArray is smaller than M, 00 should be patched.
+    locationBitsByteArray = util.conversion.ByteArrayTool.adjust(value=locationBitsByteArray, goalSize = M, signExtension = false)
     (locationBitsByteArray /: table.keys.toSeq.sorted) ((acc, key) => acc ++ table(key))
   }
 

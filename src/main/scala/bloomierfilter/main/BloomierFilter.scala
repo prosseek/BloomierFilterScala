@@ -40,6 +40,7 @@ object BloomierFilter {
             typeInference: TypeInference,
             initialm:Int = 0, k:Int = 3, q:Int,
             force_depth_count_1:Boolean = false,
+            force_m_multiple_by_four:Boolean = false,
             maxTry: Int = 5, initialHashSeed:Int = 0, caseSensitive: Boolean = false) =
   {
     val bf = new BloomierFilter(inputAny = inputAny, typeInference = typeInference,
@@ -106,6 +107,7 @@ class BloomierFilter(var inputAny:Map[JString, Any] = null,
                      var typeInference: TypeInference,
                      var initialm:Int = 0, var k:Int = 3, var q:Int = 4,
                      var force_depth_count_1:Boolean = false,
+                     val force_m_multiple_by_four:Boolean = false,
                      var maxTry: Int = 5, var initialHashSeed:Int = 0, val caseSensitive: Boolean = false)
 {
   var Q:Int = _
@@ -128,6 +130,7 @@ class BloomierFilter(var inputAny:Map[JString, Any] = null,
   byteArrayBloomierFilter = new ByteArrayBloomierFilter(input = inputByteArray,
       initialm = initialm, k = k, q = q,
       force_depth_count_1 = force_depth_count_1,
+      force_m_multiple_by_four = force_m_multiple_by_four,
       maxTry = maxTry, initialHashSeed = initialHashSeed, caseSensitive = caseSensitive)
 
   BloomierFilter.copyParameters(from = byteArrayBloomierFilter, to = this)
@@ -161,13 +164,13 @@ class BloomierFilter(var inputAny:Map[JString, Any] = null,
     var totalSize = sizeInBytes
     if (sizeInBytes == 0) { // This is the string, so we need to figure out the size
       val row = byteArrayBloomierFilter.getByteArray(label).get
-      totalSize = row(0)
+      totalSize = (row(0) + 1)
     }
     val (count, remainder) = (totalSize / Q, totalSize % Q)
     val totalCount =
       if (count == 0) 1 // get only one time if Q > size
       else {
-        if (remainder == 0) count else count + 1
+        if (remainder == 0) count  else count + 1
       }
 
     // the index is from 0 until totalCount

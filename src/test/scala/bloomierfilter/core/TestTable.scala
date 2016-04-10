@@ -62,7 +62,7 @@ class TestTable extends FunSuite {
 
     // 2. serialize the table
     assert(serialize.size == 1 + Q*2)
-    assert(table.serialize.mkString(":") == "3:60:40:50:112:-125:-113:-86:-20:-12:-3:16:13:46:59:1:23:-83:-78:-77:-50")
+    assert(table.serialize.mkString(":") == "5:47:26:79:105:-123:-52:-50:-21:-13:-11:9:82:36:10:22:-29:-112:-62:-54:-1")
 
     // 3. create table from byte array
     table.createTable(serialize)

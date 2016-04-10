@@ -45,7 +45,7 @@ class TestByteArrayBloomierFilter extends FunSuite with BeforeAndAfter{
     // other parameter check
     assert(bbf.m == 5)
     assert(bbf.Q == 10)
-    assert(bbf.hashSeed == 1)
+    assert(bbf.hashSeed == 0)
   }
 
   test("simple when m is 0") {

@@ -18,7 +18,7 @@ class TestHeader extends FunSuite {
 
       Makes : (5,3,10)
      */
-    assert(h.m == 5)
+    assert(h.m == 5*4)
     assert(h.k == 3)
     assert(h.Q == 8)
     assert(h.hashSeed == 10)
@@ -29,7 +29,7 @@ class TestHeader extends FunSuite {
     val h = new Header
     val res = Array[Byte](-85, 5)
     val (m, qq, hashSeed, complete) = h.decode(res)
-    assert(m == 5)
+    assert(m == 5*4)
     assert(qq == 8)
     assert(hashSeed == 10)
     assert(complete == 1)
@@ -37,10 +37,10 @@ class TestHeader extends FunSuite {
 
   test("Head serialize") {
     val h:Header = new Header
-    val res: Array[Byte] = h.serialize(m = 11, Q = 8, hashSeed = 16, complete = 0)
-    assert(res.mkString(":") == "67:11") // 1000011:(11 in decimal) => 16*4 + 3 (8 is stored in3) = 67
+    val res: Array[Byte] = h.encode(m = 11, Q = 8, hashSeed = 16, complete = 0)
+    assert(res.mkString(":") == "67:3") // 1000011:(11 in decimal) => 16*4 + 3 (8 is stored in3) = 67, 3*4 = 12, m is 4 fold
     val (m, qq, hashSeed, complete) = h.decode(res)
-    assert(m == 11)
+    assert(m == 12)
     assert(qq == 8)
     assert(hashSeed == 16)
     assert(complete == 0)

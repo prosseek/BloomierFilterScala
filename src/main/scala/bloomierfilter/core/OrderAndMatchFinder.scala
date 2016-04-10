@@ -28,7 +28,10 @@ object OrderAndMatchFinder {
   * @param maxTry
   * @param initialHashSeed
   */
-class OrderAndMatchFinder(val keys: Seq[String], val initialM: Int, val k: Int, val maxTry: Int = 5, val initialHashSeed: Int = 0, val force_depth_count_1:Boolean = false) {
+class OrderAndMatchFinder(val keys: Seq[String], val initialM: Int, val k: Int, val maxTry: Int = 5,
+                          val initialHashSeed: Int = 0,
+                          val force_depth_count_1:Boolean = false,
+                          val force_m_multiple_by_four:Boolean = false) {
   //********** Public Properties **********
   /**
     * ==== Why var, not val ====
@@ -187,16 +190,30 @@ class OrderAndMatchFinder(val keys: Seq[String], val initialM: Int, val k: Int, 
     * @return
     */
   def find() : OrderAndMatch = {
+    def make_m_multiply_by_for(m:Int) = {
+      // m should be updated
+      // m = 7, 7 % 4 = 3, 4-3=1, so +1 makes 8
+      // likewise 5, 5 % 4 = 1, 4-1=3, so +3 makes 8
+      if (!force_m_multiple_by_four) m
+      else {
+        if (m % 4 != 0) {
+          m + (4 - (m % 4))
+        }
+        else
+          m
+      }
+    }
+
     // ***************************
     // Start of the main algorithm
     // ***************************
 
     if (initialM > 0) { // when m is given, find the ordering with the given value
-      findOrderAndMatch(initialM, finalTry = true)
+      findOrderAndMatch(make_m_multiply_by_for(initialM), finalTry = true)
     } else {
       // when m = 0, we try to find the minimum value that finds the findOrderAndMatch
       // the initial value is n (keysDict.size)*1.5
-      var tryM = (keys.size * 2.0 + 0.5).toInt
+      var tryM = make_m_multiply_by_for((keys.size * 2.0 + 0.5).toInt)
       while (tryM < OrderAndMatchFinder.MAXIMUM_M) {
         for (i <- 0 until maxTry) {
           val res = findOrderAndMatch(tryM, finalTry = false)
@@ -205,7 +222,7 @@ class OrderAndMatchFinder(val keys: Seq[String], val initialM: Int, val k: Int, 
             return res
           }
           else {
-            tryM = (tryM*2.0 + 0.5).toInt
+            tryM = make_m_multiply_by_for((tryM*2.0 + 0.5).toInt)
           }
         }
       }

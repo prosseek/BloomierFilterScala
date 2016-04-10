@@ -24,7 +24,7 @@ class HeaderBits extends Encoding(
 object Header {
   def apply(m:Int, Q:Int, hashSeed:Int, complete:Int) = {
     val h = new Header(m = m, Q = Q, hashSeed = hashSeed, complete = complete)
-    val byteArray = h.serialize()
+    val byteArray = h.encode()
     h.byteArray = byteArray
     h
   }
@@ -57,7 +57,7 @@ class Header(var m:Int = 0, var Q:Int = 0, var hashSeed:Int = 0, var complete:In
     if (result.isEmpty) throw new Exception(s"Header format error ${bytearray.mkString(":")}")
     else {
       val temp = result.get
-      m = temp(0)
+      m = temp(0) * 4
       Q = 1 << temp(1)
       hashSeed = temp(2)
       complete = temp(3)
@@ -65,12 +65,17 @@ class Header(var m:Int = 0, var Q:Int = 0, var hashSeed:Int = 0, var complete:In
     (m, Q, hashSeed, complete)
   }
 
-  def serialize(m:Int = m, Q:Int = Q, hashSeed:Int = hashSeed, complete:Int = complete) = {
+  def encode(m:Int = m, Q:Int = Q, hashSeed:Int = hashSeed, complete:Int = complete) = {
     val map = Map[Int, Int](1 -> 0, 2 -> 1, 4 -> 2, 8 -> 3)
     if (!map.keySet.contains(Q))
       throw new RuntimeException(s"Only 1/2/4/8 is allowed in Q(${Q})")
     val qq = map(Q)
-    headerbits.encode(Seq[Int](m, qq, hashSeed, complete)).get
+
+    // The m is right shift by 2 (divide by 4)
+    val (div, rem) = (m / 4, m % 4)
+    val m2 = if (rem == 0) div else (div + 1)
+
+    headerbits.encode(Seq[Int](m2, qq, hashSeed, complete)).get
   }
 
   def size = headerbits.sizeInBytes
