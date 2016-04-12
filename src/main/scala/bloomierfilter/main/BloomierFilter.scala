@@ -4,8 +4,8 @@ import java.io.File
 import java.lang.{String => JString}
 
 import bloomierfilter.core.{BloomierHasher, Header, Table}
-import chitchat.typetool.TypeInference
-import chitchat.types.{Encoding, Float, Range, String}
+import chitchat.typefactory.TypeDatabase
+import chitchat.types._
 
 import scala.{Byte => SByte, Float => SFloat, Int => SInt}
 import scala.collection.mutable.{Map => MMap}
@@ -19,15 +19,15 @@ import scala.collection.mutable.{Map => MMap}
   */
 object BloomierFilter {
 
-  def apply(typeInference: TypeInference, byteArray:Array[SByte]) = {
+  def apply(typeDatabase: TypeDatabase, byteArray:Array[SByte]) = {
     val babf = ByteArrayBloomierFilter.apply(byteArray)
-    val bf = new BloomierFilter(typeInference = typeInference, q = babf.q)
+    val bf = new BloomierFilter(typeDatabase = typeDatabase, q = babf.q)
     bf.byteArrayBloomierFilter = babf
   }
 
-  def apply(typeInference: TypeInference, filePath:JString) = {
+  def apply(typeDatabase: TypeDatabase, filePath:JString) = {
     if (new File(filePath).exists()) {
-      val bf = new BloomierFilter(typeInference = typeInference)
+      val bf = new BloomierFilter(typeDatabase = typeDatabase)
       bf.load(filePath)
       bf
     } else {
@@ -36,13 +36,13 @@ object BloomierFilter {
   }
 
   def apply(inputAny:Map[JString, Any],
-            typeInference: TypeInference,
+            typeDatabase: TypeDatabase,
             initialm:Int = 0, k:Int = 3, q:Int,
             force_depth_count_1:Boolean = false,
             force_m_multiple_by_four:Boolean = false,
             maxTry: Int = 5, initialHashSeed:Int = 0, caseSensitive: Boolean = false) =
   {
-    val bf = new BloomierFilter(inputAny = inputAny, typeInference = typeInference,
+    val bf = new BloomierFilter(inputAny = inputAny, typeDatabase = typeDatabase,
       initialm = initialm, k = k, q = q,
       force_depth_count_1 = force_depth_count_1,
       maxTry = maxTry, initialHashSeed = initialHashSeed, caseSensitive = caseSensitive)
@@ -63,27 +63,13 @@ object BloomierFilter {
     *
     * @return converted map
     */
-  def mapConversion(inputAny:Map[JString, Any], q:Int, typeInference: TypeInference) : Map[JString, Array[SByte]] = {
+  def mapConversion(inputAny:Map[JString, Any], q:Int, typeDatabase: TypeDatabase) : Map[JString, Array[SByte]] = {
     val Q = util.conversion.Util.getBytesForBits(q)
-
-    //    val result = MMap[JString, Array[Byte]]()
-    //    // if each element is longer than Q, fold it.
-    //    // if shorter than Q, patch it with 0s.
-    //    inputAny foreach {
-    //      case (label, value) => {
-    //        val byteArray = typeInference.encode(label, value)
-    //        if (byteArray.isDefined)
-    //          result ++= bloomierfilter.conversion.Util.zeroPatchByteArray(label, byteArray.get, Q)
-    //        else
-    //          throw new RuntimeException(s"Error in map conversion ${label}/${value}")
-    //      }
-    //    }
-    //    result.toMap
 
     (Map[JString, Array[SByte]]() /: inputAny) { (acc, value) => {
         val label = value._1
         val any = value._2
-        val byteArray = typeInference.encode(label, any)
+        val byteArray = typeDatabase.encode(label, any)
         if (byteArray.isDefined)
           acc ++ bloomierfilter.conversion.Util.zeroPatchByteArray(label, byteArray.get, Q)
         else
@@ -97,7 +83,7 @@ object BloomierFilter {
 }
 
 class BloomierFilter(var inputAny:Map[JString, Any] = null,
-                     var typeInference: TypeInference,
+                     var typeDatabase: TypeDatabase,
                      var initialm:Int = 0, var k:Int = 3, var q:Int = 4,
                      var force_depth_count_1:Boolean = false,
                      val force_m_multiple_by_four:Boolean = false,
@@ -111,7 +97,7 @@ class BloomierFilter(var inputAny:Map[JString, Any] = null,
 
   var inputByteArray: Map[JString, Array[SByte]] = null
   if (inputAny != null) {
-    inputByteArray = BloomierFilter.mapConversion(inputAny = inputAny, typeInference = typeInference, q = q)
+    inputByteArray = BloomierFilter.mapConversion(inputAny = inputAny, typeDatabase = typeDatabase, q = q)
   }
   byteArrayBloomierFilter = new ByteArrayBloomierFilter(input = inputByteArray,
       initialm = initialm, k = k, q = q,
@@ -174,13 +160,49 @@ class BloomierFilter(var inputAny:Map[JString, Any] = null,
   }
 
   def get(label:JString) : Option[Any] = {
-    val t = typeInference.get(label)
-    if (t.isEmpty) None
-    else {
-      val v = t.get
+
+    def tryString() = {
+      try {
+        val t = typeDatabase.get("string")
+        getFullBytes(t.get)
+      }
+      catch {
+        case e: RuntimeException => None
+      }
+    }
+
+//    def tryFloat() = {
+//      try {
+//        val t = typeDatabase.get("float")
+//        getFullBytes(t.get)
+//      }
+//      catch {
+//        case e: RuntimeException => None
+//      }
+//    }
+
+    def getFullBytes(v:Base[_]) :Option[Any] = {
       val sizeInBytes = v.sizeInBytes
       val ba = getFullByteArray(label, sizeInBytes)
       v.decode(ba)
+    }
+
+    // check if the label is in the database.
+    val t = typeDatabase.get(label)
+    if (t.isEmpty) {
+      if (tryString.isEmpty) {
+        None
+        // todo - float has too high probability in false positive, so skip it.
+//        if (tryFloat.isEmpty) {
+//          None
+//        }
+//        else
+//          tryFloat
+      }
+      else
+        tryString
+    } else {
+      getFullBytes(t.get)
     }
   }
 
