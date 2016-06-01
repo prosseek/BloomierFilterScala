@@ -97,4 +97,13 @@ class TestByteArrayBloomierFilter extends FunSuite with BeforeAndAfter{
 
     assert(valueString.decode(ba1).get == valueString.decode(ba2).get)
   }
+
+  test("Information test") {
+    val Q = 8
+    val expect = """Map(lToIndex -> Map(0 -> 0, 2 -> 1), k -> 3, keyToL -> Map(string -> 2, age -> 0), m -> 4, C -> 0, Q -> 8, seed -> 0)"""
+    val simpleMap = makeSimple(Q)
+    val bbf = new ByteArrayBloomierFilter(input = simpleMap.toMap, q = Q*8)
+    //println(bbf.information)
+    assert(bbf.information.toString == expect)
+  }
 }

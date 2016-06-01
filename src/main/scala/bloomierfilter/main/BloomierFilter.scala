@@ -6,6 +6,7 @@ import java.lang.{String => JString}
 import bloomierfilter.core.{BloomierHasher, Header, Table}
 import chitchat.typefactory.TypeDatabase
 import chitchat.types._
+import scala.collection.mutable.ListBuffer
 
 import scala.{Byte => SByte, Float => SFloat, Int => SInt}
 import scala.collection.mutable.{Map => MMap}
@@ -191,7 +192,12 @@ class BloomierFilter(var inputAny:Map[JString, Any] = null,
     val t = typeDatabase.get(label)
     if (t.isEmpty) {
       if (tryString.isEmpty) {
-        None
+        if (label.endsWith("_i")) {
+          val t2 = typeDatabase.get("short")
+          getFullBytes(t2.get)
+        }
+        else
+          None
         // todo - float has too high probability in false positive, so skip it.
 //        if (tryFloat.isEmpty) {
 //          None
@@ -220,5 +226,36 @@ class BloomierFilter(var inputAny:Map[JString, Any] = null,
     byteArrayBloomierFilter.load(filePath)
 
     this.Q = byteArrayBloomierFilter.Q
+  }
+
+  def information = {
+    val info = byteArrayBloomierFilter.information
+    val input = info("keyToL").asInstanceOf[Map[JString, SInt]].keySet.toList.sorted
+
+    def keyToIndex(key:JString) = {
+      val keyToLocation = info("keyToL").asInstanceOf[Map[JString, SInt]]
+      val locationToIndex = info("lToIndex").asInstanceOf[Map[SInt, SInt]]
+
+      locationToIndex(keyToLocation(key))
+    }
+
+    // List(boo, boo1, string, string1, string2, x, x1, x2)
+    val keys = input.filter("[0-9]+$".r.findFirstIn(_).isEmpty)
+
+    val res = MMap[java.lang.String, List[java.lang.String]]()
+    val m = keys foreach {
+      key => {
+        val r = ListBuffer[java.lang.String]()
+        // res = Map(string -> ListBuffer(string, string1, string2), x -> ListBuffer(x, x1, x2), boo -> ListBuffer(boo, boo1))
+        input foreach (i => if (i.startsWith(key)) r += i)
+        res(key) = r.toList.sorted
+      }
+    }
+
+    // final step to get
+    // Map(string -> List(1, 2, 7), x -> List(5, 3, 6), boo -> List(0, 4))
+    val keyToList = (res map { case (key, value) => key -> value.map(keyToIndex(_)) }).toMap
+    info("keyToList") = keyToList
+    info
   }
 }

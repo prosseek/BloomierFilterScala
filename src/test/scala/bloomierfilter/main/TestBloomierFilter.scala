@@ -3,9 +3,7 @@ package bloomierfilter.main
 import chitchat.typefactory.TypeDatabase
 import org.scalatest.FunSuite
 import java.lang.{String => JString}
-/**
-  * Created by smcho on 4/2/16.
-  */
+
 class TestBloomierFilter extends FunSuite {
 
   def save(n:Int, cbf:Boolean=false) = {
@@ -81,4 +79,10 @@ class TestBloomierFilter extends FunSuite {
     assert(bf.get("boo").isEmpty)
   }
 
+  test("information") {
+    val ti = TypeDatabase()
+    val m = Map[JString, Any]("x" -> "hello", "string" -> "James", "boo" -> 12.8f)
+    val bf = new BloomierFilter(inputAny = m, q = 8 * 2, typeDatabase = ti, force_m_multiple_by_four = true)
+    println(bf.information)
+  }
 }

@@ -2,14 +2,13 @@ package bloomierfilter.core
 
 import scala.collection.{BitSet, mutable}
 import scala.collection.mutable.{Map => MMap}
-/**
-  * Created by smcho on 4/1/16.
-  */
+
 class Table(val m:Int, val Q:Int) {
   //val table = Array.ofDim[Byte](m, Q)
   var table = MMap[Int, Array[Byte]]()
   // from m, we know the size of location header
-  val M = util.conversion.Util.getBytesForBits(m)
+  val L = util.conversion.Util.getBytesForBits(m)
+  var locationBitsBitSet : BitSet = _
 
   def calculate_non_zero_n = {
     // we cannot use N because of CBF
@@ -63,10 +62,10 @@ class Table(val m:Int, val Q:Int) {
       byteArray.slice(Q*index, Q*(1 + index))
     }
 
-    val locationBits = byteArray.slice(0, M)
-    val byteArrays = byteArray.slice(M, byteArray.size)
+    val locationBits = byteArray.slice(0, L)
+    val byteArrays = byteArray.slice(L, byteArray.size)
 
-    val locationBitsBitSet = util.conversion.ByteArrayTool.byteArrayToBitSet(locationBits)
+    locationBitsBitSet = util.conversion.ByteArrayTool.byteArrayToBitSet(locationBits)
     locationBitsBitSet.toSeq.sorted.zipWithIndex.foreach {
       case (location, index) => {
         table(location) = getSubByteArray(index, byteArrays)
@@ -77,9 +76,23 @@ class Table(val m:Int, val Q:Int) {
   def serialize : Array[Byte] = {
     var locationBitsByteArray = util.conversion.ByteArrayTool.bitSetToByteArray(BitSet(table.keySet.toSeq:_*))
     // when locationBitsByteArray is smaller than M, 00 should be patched.
-    locationBitsByteArray = util.conversion.ByteArrayTool.adjust(value=locationBitsByteArray, goalSize = M, signExtension = false)
+    locationBitsByteArray = util.conversion.ByteArrayTool.adjust(value=locationBitsByteArray, goalSize = L, signExtension = false)
     (locationBitsByteArray /: table.keys.toSeq.sorted) ((acc, key) => acc ++ table(key))
   }
 
-  def size = M + Q*table.size
+  def size = L + Q*table.size
+
+  /**
+    * Returns Table information in a map
+    *
+    *  Table returns `m, Q, L, map`
+    *
+    *  map is a hash (index in L => index in table)
+    *  L = [0,5,8] => [0, 1, 2] (index 5 is the 2nd in the table)
+    */
+  def information = {
+    val lToIndex = table.keySet.toList.sorted.zipWithIndex.toMap
+
+    MMap[String, Any]("m" -> m, "Q" -> Q, "lToIndex" -> lToIndex)
+  }
 }

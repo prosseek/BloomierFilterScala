@@ -2,6 +2,7 @@ package bloomierfilter.main
 
 import java.io.{BufferedInputStream, BufferedOutputStream, FileInputStream, FileOutputStream}
 import java.nio.file.{Files, Paths}
+import scala.collection.mutable.{Map => MMap}
 
 import bloomierfilter.core._
 
@@ -79,6 +80,9 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]] = null,
   var n:Int = _
   var m = initialm // initially m is set to the given value, it will be updated when m = 0
 
+  // key and location map
+  val keyLocationMap = MMap[String, Int]()
+
   if (force_m_multiple_by_four && (initialm != 0 && initialm % 4 != 0))
     throw new RuntimeException(s"You set force_m_multiply_by_four, but your initialm is not multiply by four ${initialm}")
 
@@ -138,6 +142,7 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]] = null,
           }
         }
         table(L) = valueToStore
+        keyLocationMap(key) = L
       }
     }
   }
@@ -183,8 +188,37 @@ class ByteArrayBloomierFilter(val input:Map[String, Array[Byte]] = null,
     }
     val serializedHeader = header.encode() // require () to use default parameters
     val serializedTable = table.serialize
-
     serializedHeader ++ serializedTable
+  }
+
+  /**
+    *  m, m' : m = m'* 4
+    *  k, q, Q, Q' : 2**Q' = Q
+    *  n (total number of elements)
+    *  L (locations)
+    *  map (label -> index)
+    * @return
+    */
+
+  def information = {
+    this.serialize // to fill the header
+
+    // m, Q, L, lToIndex is from the table
+    val mmap = this.table.information
+
+    mmap("k") = this.k
+    mmap("keyToL") = keyLocationMap.toMap
+    mmap("seed") = this.hashSeed
+    mmap("C") = this.header.complete
+
+    // todo:
+    //   the value 1 should work now, but it should be modified with different versions
+    // start location in the serialized byte array
+    // 1 is for summary
+    // table starts at the header.size
+    mmap("startLocation") = 1 +  header.size
+
+    mmap
   }
 
   def save(filePath:String, byteArray:Array[Byte] = null) = {
